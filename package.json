@@ -1,0 +1,21 @@
+{
+  "name": "@ufo-soft/caelus",
+  "version": "0.1.0",
+  "description": "A command registry: define a command once, dispatch it from any surface.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/core.js",
+  "types": "./dist/core.d.ts",
+  "exports": {
+    ".": "./dist/core.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
