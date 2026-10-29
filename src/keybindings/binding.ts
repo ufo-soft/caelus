@@ -1,15 +1,7 @@
-export const BindingKind = {
-  Bound: 'bound',
-  Unbound: 'unbound',
-}
-
-class Bound {
-  readonly kind = BindingKind.Bound;
+export class Bound {
   constructor(public readonly commandName: string) {}
 }
 
-class Unbind {
-  readonly kind = BindingKind.Unbound;
-}
+export class Unbind {}
 
 export type Binding = Bound | Unbind;
