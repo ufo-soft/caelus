@@ -62,21 +62,29 @@ function chord(mods: Set<string>, key: string): string {
   return [...MODIFIERS.filter((m) => mods.has(m)), key].join('+')
 }
 
-function resolve(defaults: Keymap, patch: Keymap, registry: Registry): Map<string, string> {
+/** Merge patch over defaults per canonical chord. 'unbind' and unknown commands remove the chord. */
+export function resolve(defaults: Keymap, patch: Keymap, registry: Registry): Map<string, string> {
   const out = new Map<string, string>()
-  for (const [chord, name] of Object.entries({...defaults, ...patch})) {
-    const key = canonical(chord)
-    if (key && name !== 'unbind' && registry.retrieve(name)) out.set(key, name)
+  for (const layer of [defaults, patch]) {
+    for (const [chord, name] of Object.entries(layer)) {
+      const key = canonical(chord)
+      if (!key) continue
+      if (name === 'unbind' || !registry.retrieve(name)) out.delete(key)
+      else out.set(key, name)
+    }
   }
-  return out;
+  return out
 }
 
-function attach(table: () => Map<string, string>, registry: Registry) {
-  window.addEventListener('keydown', e => {
-    const name = table().get(chordOf(e));
+type KeyTarget = Pick<EventTarget, 'addEventListener'>
+
+/** One keydown listener; reads the table through a thunk so a reload is just a swap. */
+export function attach(table: () => Map<string, string>, registry: Registry, target: KeyTarget = window) {
+  target.addEventListener('keydown', (e) => {
+    const name = table().get(chordOf(e as KeyboardEvent))
     if (name) {
-      e.preventDefault();
-      registry.invoke(name, {});
+      e.preventDefault()
+      registry.invoke(name, {})
     }
-  });
+  })
 }
