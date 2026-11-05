@@ -3,7 +3,15 @@
   "version": "0.1.0",
   "description": "A command registry: define a command once, dispatch it from any surface.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ufo-soft/caelus.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/core.js",
   "types": "./dist/core.d.ts",
   "exports": {
@@ -15,6 +23,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "test": "vitest run"
   },
   "devDependencies": {
