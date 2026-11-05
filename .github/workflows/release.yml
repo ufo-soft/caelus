@@ -1,0 +1,33 @@
+name: Release
+
+# Triggered by `npm version <patch|minor|major>` followed by `git push --follow-tags`.
+# Publishes to npm via trusted publishing (OIDC, no token secret) and creates the
+# GitHub Release for the same commit.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      # trusted publishing needs npm 11.5.1+; node 22 ships an older one
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npx tsc --noEmit -p .
+      - run: npm test
+      - run: npm publish --provenance
+      - run: gh release create "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
