@@ -27,6 +27,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc && npm run dev -w example",
+    "electron": "tsc && npm run electron -w example",
     "prepublishOnly": "npm run build",
     "test": "vitest run"
   },

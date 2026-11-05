@@ -2,13 +2,16 @@
   "name": "caelus-example",
   "private": true,
   "type": "module",
+  "main": "electron.js",
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "electron": "vite build --base ./ && electron ."
   },
   "dependencies": {
     "@ufo-soft/caelus": "file:.."
   },
   "devDependencies": {
+    "electron": "^45.2.3",
     "vite": "^7.1.0"
   }
 }
