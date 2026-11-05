@@ -43,6 +43,7 @@ npm install
 npm test
 npm run build
 npm run dev      # builds, then serves example/ with Vite
+npm run electron # builds, then opens the same example in an Electron window
 ```
 
 `example/` is a plain browser app that depends on the package by name, so it
