@@ -1,6 +1,6 @@
 import { parse } from 'smol-toml'
 
-import { FAILED, Registry, Outcome, ok, failed } from './core'
+import { FAILED, Registry, Outcome, ok, failed } from './core.js'
 
 type Keymap = Record<string, string>
 
@@ -46,7 +46,7 @@ export function canonical(input: string): string {
   if (tokens.length === 0) return ''
   const key = tokens.pop()!
   const mods = tokens.map((t) => MODIFIER_ALIASES[t] ?? t)
-  if (!mods.every(isModifier)) return ''
+  if (isModifier(key) || !mods.every(isModifier)) return ''
   return chord(mods, KEY_ALIASES[key] ?? key)
 }
 
@@ -63,8 +63,8 @@ function keyOf(e: KeyboardEvent): string {
   const isDead = key === 'dead'
   if (key.length > 1 && !isDead) return KEY_ALIASES[key] ?? key
   // alt and shift change event.key ('å', '!'); config names the unshifted key, so read event.code.
-  const cooked = e.altKey || isDead || (e.shiftKey && !/[a-z]/.test(key))
-  return cooked ? fromCode(e.code) ?? key : KEY_ALIASES[key] ?? key
+  const cooked = e.altKey || isDead || (e.shiftKey && !/\p{L}/u.test(key))
+  return (cooked ? fromCode(e.code) : undefined) ?? KEY_ALIASES[key] ?? key
 }
 
 function fromCode(code: string): string | undefined {
@@ -90,17 +90,19 @@ function canonicalized(layer: Keymap): Keymap {
   return Object.fromEntries(entries.filter(([key]) => key))
 }
 
-type KeyTarget = Pick<EventTarget, 'addEventListener'>
+type KeyTarget = Pick<EventTarget, 'addEventListener' | 'removeEventListener'>
 
-/** One keydown listener; reads the table through a thunk so a reload is just a swap. */
-export function attach(table: () => Map<string, string>, registry: Registry, target: KeyTarget = window) {
-  target.addEventListener('keydown', (e) => {
+/** One keydown listener; reads the table through a thunk so a reload is just a swap. Returns the detach. */
+export function attach(table: () => ReadonlyMap<string, string>, registry: Registry, target: KeyTarget = window) {
+  const listener = (e: Event) => {
     const name = table().get(chordOf(e as KeyboardEvent))
     if (name) {
       e.preventDefault()
       registry.invoke(name, {})
     }
-  })
+  }
+  target.addEventListener('keydown', listener)
+  return () => target.removeEventListener('keydown', listener)
 }
 
 /** Produces the user's keymap text from wherever the app keeps it: a file, storage, an API. */
@@ -109,7 +111,8 @@ export type Source = () => string | Promise<string>
 export interface Keybindings {
   /** The current resolved table. Replaced wholesale on a successful reload, never mutated. */
   readonly table: ReadonlyMap<string, string>
-  attach(target?: KeyTarget): void
+  /** Adds the keydown listener; returns the detach. */
+  attach(target?: KeyTarget): () => void
   /** Re-reads the source and swaps the table. On failure the previous table stays and the reason is returned. */
   reload(): Promise<Outcome<ReadonlyMap<string, string>>>
 }
@@ -118,12 +121,15 @@ export interface Keybindings {
  *  Starts on defaults alone; call reload() to apply the source and learn whether it parsed. */
 export function keybindings(registry: Registry, defaults: Keymap, source?: Source): Keybindings {
   let table = resolve(defaults, {}, registry)
+  let latest = 0
 
   const reload = async (): Promise<Outcome<ReadonlyMap<string, string>>> => {
-    if (!source) return ok(table)
-    const parsed = parseKeymap(await source())
-    if (parsed.kind === FAILED) return parsed
-    table = resolve(defaults, parsed.data, registry)
+    const request = ++latest
+    const patch = await read(source)
+    if (patch.kind === FAILED) return patch
+    // a newer reload has already started; let its result win even if ours resolved later
+    if (request !== latest) return ok(table)
+    table = resolve(defaults, patch.data, registry)
     return ok(table)
   }
 
@@ -133,5 +139,15 @@ export function keybindings(registry: Registry, defaults: Keymap, source?: Sourc
     },
     attach: (target) => attach(() => table, registry, target),
     reload,
+  }
+}
+
+/** A throwing source (unreadable file, failed fetch) is a failure like a parse error, not an exception. */
+async function read(source?: Source): Promise<Outcome<Keymap>> {
+  if (!source) return ok({})
+  try {
+    return parseKeymap(await source())
+  } catch (e) {
+    return failed(e instanceof Error ? e.message : String(e))
   }
 }

@@ -5,14 +5,18 @@ import { UNBIND, attach, canonical, chordOf, keybindings, parseKeymap, resolve }
 
 /** Captures the keydown listener so a test can fire events at it. */
 function target() {
-  let listener: (e: Event) => void = () => {}
+  const listeners = new Set<(e: Event) => void>()
   return {
     addEventListener: (_type: string, fn: EventListenerOrEventListenerObject | null) => {
-      listener = fn as (e: Event) => void
+      listeners.add(fn as (e: Event) => void)
+    },
+    removeEventListener: (_type: string, fn: EventListenerOrEventListenerObject | null) => {
+      listeners.delete(fn as (e: Event) => void)
     },
     press: (e: ReturnType<typeof ev>) => {
       const prevented = { value: false }
-      listener(Object.assign(e, { preventDefault: () => (prevented.value = true) }))
+      const event = Object.assign(e, { preventDefault: () => (prevented.value = true) })
+      for (const listener of listeners) listener(event)
       return prevented.value
     },
   }
@@ -74,6 +78,11 @@ describe('canonical', () => {
   it('passes unknown keys through loosely', () => {
     expect(canonical('cmd+banana')).toBe('cmd+banana')
   })
+
+  it('rejects a modifier standing in as the key', () => {
+    expect(canonical('cmd+shift')).toBe('')
+    expect(canonical('cmd+')).toBe('')
+  })
 })
 
 describe('chordOf', () => {
@@ -111,6 +120,17 @@ describe('chordOf', () => {
   it('follows the keyboard layout for unmodified and cmd chords', () => {
     // Dvorak: the physical QWERTY "b" key produces "n"; config says cmd+n and should match.
     expect(chordOf(ev('n', 'KeyB', { meta: true }))).toBe('cmd+n')
+  })
+
+  it('follows the layout for shifted letters on non-Latin layouts too', () => {
+    // Cyrillic: shift uppercases a letter, it does not cook a symbol, so event.key is still right.
+    expect(chordOf(ev('й', 'KeyQ', { meta: true }))).toBe('cmd+й')
+    expect(chordOf(ev('Й', 'KeyQ', { meta: true, shift: true }))).toBe('cmd+shift+й')
+  })
+
+  it('keeps key aliases when the key is cooked', () => {
+    expect(chordOf(ev(' ', 'Space', { shift: true }))).toBe('shift+space')
+    expect(chordOf(ev(' ', 'Space', { alt: true }))).toBe('alt+space')
   })
 
   it('agrees with canonical for the same chord', () => {
@@ -203,6 +223,18 @@ describe('attach', () => {
     expect(fired).toEqual([])
   })
 
+  it('returns a dispose function that detaches the listener', () => {
+    const fired: string[] = []
+    const t = target()
+    const dispose = attach(() => new Map([['cmd+n', 'open']]), registryOf(['open'], fired), t)
+
+    t.press(ev('n', 'KeyN', { meta: true }))
+    dispose()
+    t.press(ev('n', 'KeyN', { meta: true }))
+
+    expect(fired).toEqual(['open'])
+  })
+
   it('reads the table through the thunk, so swapping it is a live reload', () => {
     const fired: string[] = []
     const registry = registryOf(['open', 'close'], fired)
@@ -252,6 +284,44 @@ describe('keybindings', () => {
     const outcome = await keys.reload()
 
     expect(outcome.kind).toBe(FAILED)
+    expect(keys.table).toEqual(new Map([['cmd+n', 'close']]))
+  })
+
+  it('a source that throws is a failed outcome and the previous table stays', async () => {
+    const keys = keybindings(registryOf(['open']), defaults, async () => {
+      throw new Error('ENOENT: no such file')
+    })
+    const outcome = await keys.reload()
+
+    expect(outcome.kind).toBe(FAILED)
+    if (outcome.kind === FAILED) expect(outcome.reason).toMatch(/ENOENT/)
+    expect(keys.table).toEqual(new Map([['cmd+n', 'open']]))
+  })
+
+  it('reload without a source re-resolves, so late-registered commands bind', async () => {
+    const registry = new Registry()
+    const keys = keybindings(registry, defaults)
+    expect(keys.table).toEqual(new Map())
+
+    registry.register({ name: 'open', command: { description: 'open', parameters: [] }, handler: () => ok() })
+    await keys.reload()
+
+    expect(keys.table).toEqual(new Map([['cmd+n', 'open']]))
+  })
+
+  it('overlapping reloads apply the latest request, not the last to resolve', async () => {
+    const registry = registryOf(['open', 'close'])
+    let settle: (text: string) => void = () => {}
+    const slow = new Promise<string>((resolve) => (settle = resolve))
+    const reads = [() => slow, () => '[bindings]\n"cmd+n" = "close"']
+    const keys = keybindings(registry, defaults, () => reads.shift()!())
+
+    const first = keys.reload()
+    const second = keys.reload()
+    await second
+    settle('[bindings]\n"cmd+n" = "open"')
+    await first
+
     expect(keys.table).toEqual(new Map([['cmd+n', 'close']]))
   })
 

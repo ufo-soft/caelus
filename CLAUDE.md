@@ -1,6 +1,6 @@
 # Caelus
 
-A command registry: define a command once, dispatch it from any surface (key chord, button, CLI subcommand, MCP tool call). TypeScript, zero runtime dependencies, targets web and Electron first; the pure parts also run server-side.
+A command registry: define a command once, dispatch it from any surface (key chord, button, CLI subcommand, MCP tool call). TypeScript, targets web and Electron first; the pure parts also run server-side. Core has zero dependencies; keybindings takes `smol-toml` for its config parser, which is the one format dependency and the first thing to lift out to the app if a second surface wants config.
 
 This is the real version. The Kotlin Multiplatform prototype lives at `~/projects/caelus-old` (archived). Its reasoning carries forward, its types mostly do not: read `docs/decisions/command-action-registration.md` there for the why behind the registry, and treat its keybinding types as scaffolding the browser makes unnecessary.
 
@@ -20,7 +20,7 @@ Follow `.claude/code-style-guide.md`. Short version: build values as expressions
 
 ```
 src/core.ts          Registry, Registration, Command, Parameter, Outcome. The narrow waist.
-src/keybindings.ts   canonical, chordOf, resolve, attach. One file by design.
+src/keybindings.ts   canonical, chordOf, parseKeymap, resolve, attach, keybindings. One file by design.
 test/                One test file per module. Fakes are small helpers in the test file.
 docs/                Architecture and the extracted brainstorm transcripts.
 ```
@@ -39,6 +39,6 @@ Run both the type-check and the tests after any change to `src/`.
 
 ## Keybindings in one paragraph
 
-Defaults are a plain object in the app (`{ 'cmd+n': 'openItemDialog' }`). The user patch is a parsed config file, same shape; the app reads the file and picks the parser. `resolve` canonicalizes both layers, applies patch over defaults, deletes `'unbind'` tombstones and unknown commands, and returns a `Map<chord, commandName>`. `attach` adds one `keydown` listener that turns the event into the same canonical string via `chordOf`, looks it up, and invokes through the registry. Live reload is rebuilding the map and swapping the reference; the listener never changes. `canonical` and `chordOf` must agree, and that is the module's only invariant.
+Defaults are a plain object in the app (`{ 'cmd+n': 'openItemDialog' }`). The user patch is a parsed config file, same shape; the app reads the file and picks the parser. `resolve` canonicalizes both layers, applies patch over defaults, deletes `'unbind'` tombstones and unknown commands, and returns a `Map<chord, commandName>`. `attach` adds one `keydown` listener that turns the event into the same canonical string via `chordOf`, looks it up, and invokes through the registry; it returns the detach. The `keybindings` handle wraps all of this with a `Source` (any function producing config text) and a `reload` that re-reads, re-resolves, and swaps the reference. A failed read or parse keeps the previous table; overlapping reloads let the latest request win. `canonical` and `chordOf` must agree, and that is the module's only invariant.
 
 Known gaps, deliberately deferred: the `mod` platform modifier, the Chromium `getLayoutMap` refinement for alt chords on non-QWERTY layouts, chord sequences, focus context, Electron menu accelerators.
