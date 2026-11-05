@@ -21,7 +21,7 @@ const CODE_CHARS: Record<string, string> = {
 }
 
 /** Config text -> canonical chord string ('cmd+shift+k'), or '' if unparseable. */
-function canonical(input: string): string {
+export function canonical(input: string): string {
   const tokens = input.toLowerCase().split('+').map((t) => t.trim()).filter(Boolean)
   if (tokens.length === 0) return ''
   const key = tokens.pop()!
@@ -35,7 +35,7 @@ function canonical(input: string): string {
 }
 
 /** KeyboardEvent -> canonical chord string, or '' when the key is itself a modifier. */
-function chordOf(e: KeyboardEvent): string {
+export function chordOf(e: KeyboardEvent): string {
   if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return ''
   const mods = new Set<string>()
   if (e.metaKey) mods.add('cmd')
