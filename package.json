@@ -7,9 +7,12 @@
   "main": "./dist/core.js",
   "types": "./dist/core.d.ts",
   "exports": {
-    ".": "./dist/core.js"
+    ".": "./dist/core.js",
+    "./keybindings": "./dist/keybindings.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run"
@@ -17,5 +20,8 @@
   "devDependencies": {
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "smol-toml": "^1.9.1"
   }
 }
