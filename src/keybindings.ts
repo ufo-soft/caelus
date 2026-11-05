@@ -99,3 +99,36 @@ export function attach(table: () => Map<string, string>, registry: Registry, tar
     }
   })
 }
+
+/** Produces the user's keymap text from wherever the app keeps it: a file, storage, an API. */
+export type Source = () => string | Promise<string>
+
+export interface Keybindings {
+  /** The current resolved table. Replaced wholesale on a successful reload, never mutated. */
+  readonly table: ReadonlyMap<string, string>
+  attach(target?: KeyTarget): void
+  /** Re-reads the source and swaps the table. On failure the previous table stays and the reason is returned. */
+  reload(): Promise<Outcome<ReadonlyMap<string, string>>>
+}
+
+/** Wires defaults, an optional user source, and the registry into one reloadable handle.
+ *  Starts on defaults alone; call reload() to apply the source and learn whether it parsed. */
+export function keybindings(registry: Registry, defaults: Keymap, source?: Source): Keybindings {
+  let table = resolve(defaults, {}, registry)
+
+  const reload = async (): Promise<Outcome<ReadonlyMap<string, string>>> => {
+    if (!source) return ok(table)
+    const parsed = parseKeymap(await source())
+    if (parsed.kind === 'failed') return parsed
+    table = resolve(defaults, parsed.data, registry)
+    return ok(table)
+  }
+
+  return {
+    get table() {
+      return table
+    },
+    attach: (target) => attach(() => table, registry, target),
+    reload,
+  }
+}

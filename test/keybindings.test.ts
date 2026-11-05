@@ -1,7 +1,22 @@
 import { describe, expect, it } from 'vitest'
 
 import { Registry, ok } from '../src/core.js'
-import { attach, canonical, chordOf, parseKeymap, resolve } from '../src/keybindings.js'
+import { attach, canonical, chordOf, keybindings, parseKeymap, resolve } from '../src/keybindings.js'
+
+/** Captures the keydown listener so a test can fire events at it. */
+function target() {
+  let listener: (e: Event) => void = () => {}
+  return {
+    addEventListener: (_type: string, fn: EventListenerOrEventListenerObject | null) => {
+      listener = fn as (e: Event) => void
+    },
+    press: (e: ReturnType<typeof ev>) => {
+      const prevented = { value: false }
+      listener(Object.assign(e, { preventDefault: () => (prevented.value = true) }))
+      return prevented.value
+    },
+  }
+}
 
 /** A registry with the named commands; `fired` records which ones ran. */
 function registryOf(names: string[], fired: string[] = []): Registry {
@@ -169,21 +184,6 @@ describe('resolve', () => {
 })
 
 describe('attach', () => {
-  /** Captures the keydown listener so a test can fire events at it. */
-  function target() {
-    let listener: (e: Event) => void = () => {}
-    return {
-      addEventListener: (_type: string, fn: EventListenerOrEventListenerObject | null) => {
-        listener = fn as (e: Event) => void
-      },
-      press: (e: ReturnType<typeof ev>) => {
-        const prevented = { value: false }
-        listener(Object.assign(e, { preventDefault: () => (prevented.value = true) }))
-        return prevented.value
-      },
-    }
-  }
-
   it('invokes the bound command and prevents default', () => {
     const fired: string[] = []
     const registry = registryOf(['open'], fired)
@@ -213,6 +213,59 @@ describe('attach', () => {
     t.press(ev('n', 'KeyN', { meta: true }))
     table = new Map([['cmd+n', 'close']])
     t.press(ev('n', 'KeyN', { meta: true }))
+
+    expect(fired).toEqual(['open', 'close'])
+  })
+})
+
+describe('keybindings', () => {
+  const defaults = { 'cmd+n': 'open' }
+  const cmdN = () => ev('n', 'KeyN', { meta: true })
+
+  it('starts on defaults alone', () => {
+    const keys = keybindings(registryOf(['open']), defaults)
+    expect(keys.table).toEqual(new Map([['cmd+n', 'open']]))
+  })
+
+  it('reload applies the source over the defaults', async () => {
+    const keys = keybindings(registryOf(['open', 'close']), defaults, () => '[bindings]\n"cmd+n" = "close"')
+    const outcome = await keys.reload()
+    expect(outcome).toEqual(ok(new Map([['cmd+n', 'close']])))
+    expect(keys.table).toEqual(new Map([['cmd+n', 'close']]))
+  })
+
+  it('accepts a synchronous source and no source', async () => {
+    const sync = keybindings(registryOf(['open', 'close']), defaults, () => '[bindings]\n"cmd+w" = "close"')
+    await sync.reload()
+    expect(sync.table).toEqual(new Map([['cmd+n', 'open'], ['cmd+w', 'close']]))
+
+    const none = keybindings(registryOf(['open']), defaults)
+    expect(await none.reload()).toEqual(ok(new Map([['cmd+n', 'open']])))
+  })
+
+  it('a reload that fails to parse keeps the previous table and returns the reason', async () => {
+    let text = '[bindings]\n"cmd+n" = "close"'
+    const keys = keybindings(registryOf(['open', 'close']), defaults, async () => text)
+    await keys.reload()
+
+    text = '[bindings]\n"cmd+n" = '
+    const outcome = await keys.reload()
+
+    expect(outcome.kind).toBe('failed')
+    expect(keys.table).toEqual(new Map([['cmd+n', 'close']]))
+  })
+
+  it('the attached listener sees the swapped table after reload', async () => {
+    const fired: string[] = []
+    let text = ''
+    const keys = keybindings(registryOf(['open', 'close'], fired), defaults, () => text)
+    const t = target()
+    keys.attach(t)
+
+    t.press(cmdN())
+    text = '[bindings]\n"cmd+n" = "close"'
+    await keys.reload()
+    t.press(cmdN())
 
     expect(fired).toEqual(['open', 'close'])
   })
