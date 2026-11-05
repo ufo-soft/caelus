@@ -1,8 +1,11 @@
 import { parse } from 'smol-toml'
 
-import { Registry, Outcome, ok, failed } from './core'
+import { FAILED, Registry, Outcome, ok, failed } from './core'
 
 type Keymap = Record<string, string>
+
+/** The tombstone value: binding a chord to this removes it from the resolved table. */
+export const UNBIND = 'unbind'
 
 /** Reads the [bindings] table of a TOML keymap. No table is an empty patch; a malformed document is a failure. */
 export function parseKeymap(text: string): Outcome<Keymap> {
@@ -57,9 +60,10 @@ export function chordOf(e: KeyboardEvent): string {
 
 function keyOf(e: KeyboardEvent): string {
   const key = e.key.toLowerCase()
-  if (key.length > 1 && key !== 'dead') return KEY_ALIASES[key] ?? key
+  const isDead = key === 'dead'
+  if (key.length > 1 && !isDead) return KEY_ALIASES[key] ?? key
   // alt and shift change event.key ('å', '!'); config names the unshifted key, so read event.code.
-  const cooked = e.altKey || key === 'dead' || (e.shiftKey && !/[a-z]/.test(key))
+  const cooked = e.altKey || isDead || (e.shiftKey && !/[a-z]/.test(key))
   return cooked ? fromCode(e.code) ?? key : KEY_ALIASES[key] ?? key
 }
 
@@ -73,14 +77,14 @@ function chord(mods: readonly string[], key: string): string {
   return [...MODIFIERS.filter((m) => mods.includes(m)), key].join('+')
 }
 
-/** Merge patch over defaults per canonical chord. 'unbind' and unknown commands remove the chord. */
+/** Merge patch over defaults per canonical chord. UNBIND and unknown commands remove the chord. */
 export function resolve(defaults: Keymap, patch: Keymap, registry: Registry): Map<string, string> {
   const out = new Map<string, string>()
   for (const layer of [defaults, patch]) {
     for (const [chord, name] of Object.entries(layer)) {
       const key = canonical(chord)
       if (!key) continue
-      if (name === 'unbind' || !registry.retrieve(name)) out.delete(key)
+      if (name === UNBIND || !registry.retrieve(name)) out.delete(key)
       else out.set(key, name)
     }
   }
@@ -119,7 +123,7 @@ export function keybindings(registry: Registry, defaults: Keymap, source?: Sourc
   const reload = async (): Promise<Outcome<ReadonlyMap<string, string>>> => {
     if (!source) return ok(table)
     const parsed = parseKeymap(await source())
-    if (parsed.kind === 'failed') return parsed
+    if (parsed.kind === FAILED) return parsed
     table = resolve(defaults, parsed.data, registry)
     return ok(table)
   }

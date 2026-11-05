@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { Registry, ok } from '../src/core.js'
-import { attach, canonical, chordOf, keybindings, parseKeymap, resolve } from '../src/keybindings.js'
+import { FAILED, Registry, ok } from '../src/core.js'
+import { UNBIND, attach, canonical, chordOf, keybindings, parseKeymap, resolve } from '../src/keybindings.js'
 
 /** Captures the keydown listener so a test can fire events at it. */
 function target() {
@@ -128,7 +128,7 @@ describe('parseKeymap', () => {
       "cmd+i" = "openItemDialog"
       "cmd+n" = "unbind"
     `
-    expect(parseKeymap(toml)).toEqual(ok({ 'cmd+i': 'openItemDialog', 'cmd+n': 'unbind' }))
+    expect(parseKeymap(toml)).toEqual(ok({ 'cmd+i': 'openItemDialog', 'cmd+n': UNBIND }))
   })
 
   it('treats a missing bindings table as an empty patch', () => {
@@ -149,8 +149,8 @@ describe('parseKeymap', () => {
 
   it('fails on malformed TOML with the parser message', () => {
     const outcome = parseKeymap('[bindings]\n"cmd+i" = ')
-    expect(outcome.kind).toBe('failed')
-    if (outcome.kind === 'failed') expect(outcome.reason).toMatch(/Invalid TOML/)
+    expect(outcome.kind).toBe(FAILED)
+    if (outcome.kind === FAILED) expect(outcome.reason).toMatch(/Invalid TOML/)
   })
 })
 
@@ -167,7 +167,7 @@ describe('resolve', () => {
   })
 
   it('unbind removes a default', () => {
-    const table = resolve({ 'cmd+n': 'open', 'cmd+w': 'close' }, { 'cmd+n': 'unbind' }, registry)
+    const table = resolve({ 'cmd+n': 'open', 'cmd+w': 'close' }, { 'cmd+n': UNBIND }, registry)
     expect(table).toEqual(new Map([['cmd+w', 'close']]))
   })
 
@@ -251,7 +251,7 @@ describe('keybindings', () => {
     text = '[bindings]\n"cmd+n" = '
     const outcome = await keys.reload()
 
-    expect(outcome.kind).toBe('failed')
+    expect(outcome.kind).toBe(FAILED)
     expect(keys.table).toEqual(new Map([['cmd+n', 'close']]))
   })
 
