@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
-import { canonical, chordOf } from '../src/keybindings.js'
+import { Registry, ok } from '../src/core.js'
+import { attach, canonical, chordOf, resolve } from '../src/keybindings.js'
+
+/** A registry with the named commands; `fired` records which ones ran. */
+function registryOf(names: string[], fired: string[] = []): Registry {
+  const registry = new Registry()
+  registry.register(
+    names.map((name) => ({
+      name,
+      command: { description: name, parameters: [] },
+      handler: () => (fired.push(name), ok()),
+    })),
+  )
+  return registry
+}
 
 /** Minimal stand-in for a KeyboardEvent; vitest runs in node, so there's no real one. */
 function ev(key: string, code: string, mods: Partial<Record<'meta' | 'ctrl' | 'alt' | 'shift', true>> = {}) {
@@ -88,5 +102,84 @@ describe('chordOf', () => {
     expect(chordOf(ev('k', 'KeyK', { meta: true, shift: true }))).toBe(canonical('shift+cmd+k'))
     expect(chordOf(ev('!', 'Digit1', { shift: true }))).toBe(canonical('shift+1'))
     expect(chordOf(ev('Escape', 'Escape'))).toBe(canonical('esc'))
+  })
+})
+
+describe('resolve', () => {
+  const registry = registryOf(['open', 'close'])
+
+  it('keeps defaults when there is no patch', () => {
+    expect(resolve({ 'cmd+n': 'open' }, {}, registry)).toEqual(new Map([['cmd+n', 'open']]))
+  })
+
+  it('patch overrides a default, regardless of chord spelling', () => {
+    const table = resolve({ 'cmd+n': 'open' }, { 'Cmd + N': 'close' }, registry)
+    expect(table).toEqual(new Map([['cmd+n', 'close']]))
+  })
+
+  it('unbind removes a default', () => {
+    const table = resolve({ 'cmd+n': 'open', 'cmd+w': 'close' }, { 'cmd+n': 'unbind' }, registry)
+    expect(table).toEqual(new Map([['cmd+w', 'close']]))
+  })
+
+  it('drops bindings to unknown commands', () => {
+    expect(resolve({ 'cmd+n': 'nope' }, {}, registry)).toEqual(new Map())
+    // a patch that rebinds to an unknown command loses the default too: the user moved away from it
+    expect(resolve({ 'cmd+n': 'open' }, { 'cmd+n': 'nope' }, registry)).toEqual(new Map())
+  })
+
+  it('drops unparseable chords without touching the rest', () => {
+    const table = resolve({ 'hyper+n': 'open', 'cmd+w': 'close' }, {}, registry)
+    expect(table).toEqual(new Map([['cmd+w', 'close']]))
+  })
+})
+
+describe('attach', () => {
+  /** Captures the keydown listener so a test can fire events at it. */
+  function target() {
+    let listener: (e: Event) => void = () => {}
+    return {
+      addEventListener: (_type: string, fn: EventListenerOrEventListenerObject | null) => {
+        listener = fn as (e: Event) => void
+      },
+      press: (e: ReturnType<typeof ev>) => {
+        const prevented = { value: false }
+        listener(Object.assign(e, { preventDefault: () => (prevented.value = true) }))
+        return prevented.value
+      },
+    }
+  }
+
+  it('invokes the bound command and prevents default', () => {
+    const fired: string[] = []
+    const registry = registryOf(['open'], fired)
+    const t = target()
+    attach(() => new Map([['cmd+n', 'open']]), registry, t)
+
+    expect(t.press(ev('n', 'KeyN', { meta: true }))).toBe(true)
+    expect(fired).toEqual(['open'])
+  })
+
+  it('ignores unbound chords and leaves default behaviour alone', () => {
+    const fired: string[] = []
+    const t = target()
+    attach(() => new Map([['cmd+n', 'open']]), registryOf(['open'], fired), t)
+
+    expect(t.press(ev('x', 'KeyX', { meta: true }))).toBe(false)
+    expect(fired).toEqual([])
+  })
+
+  it('reads the table through the thunk, so swapping it is a live reload', () => {
+    const fired: string[] = []
+    const registry = registryOf(['open', 'close'], fired)
+    let table = new Map([['cmd+n', 'open']])
+    const t = target()
+    attach(() => table, registry, t)
+
+    t.press(ev('n', 'KeyN', { meta: true }))
+    table = new Map([['cmd+n', 'close']])
+    t.press(ev('n', 'KeyN', { meta: true }))
+
+    expect(fired).toEqual(['open', 'close'])
   })
 })
