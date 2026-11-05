@@ -1,0 +1,14 @@
+{
+  "name": "caelus-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@ufo-soft/caelus": "file:.."
+  },
+  "devDependencies": {
+    "vite": "^7.1.0"
+  }
+}

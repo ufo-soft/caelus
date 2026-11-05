@@ -42,4 +42,9 @@ Adapters (keybindings, CLI, MCP, UI) are out of scope for now.
 npm install
 npm test
 npm run build
+npm run dev      # builds, then serves example/ with Vite
 ```
+
+`example/` is a plain browser app that depends on the package by name, so it
+exercises the real `exports` map and the built `dist/`. When editing `src/`
+with the example open, run `npx tsc --watch` alongside so `dist/` stays fresh.

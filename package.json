@@ -21,8 +21,12 @@
   "files": [
     "dist"
   ],
+  "workspaces": [
+    "example"
+  ],
   "scripts": {
     "build": "tsc",
+    "dev": "tsc && npm run dev -w example",
     "prepublishOnly": "npm run build",
     "test": "vitest run"
   },
