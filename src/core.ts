@@ -13,12 +13,13 @@ export interface Command {
 
 export type Args = Readonly<Record<string, unknown>>
 
-export type Outcome =
-  | { readonly kind: 'ok'; readonly data: unknown }
+/** A fallible step's result as a value. Carries no context about what it was the outcome of. */
+export type Outcome<T = unknown> =
+  | { readonly kind: 'ok'; readonly data: T }
   | { readonly kind: 'failed'; readonly reason: string }
 
-export const ok = (data: unknown = null): Outcome => ({ kind: 'ok', data })
-export const failed = (reason: string): Outcome => ({ kind: 'failed', reason })
+export const ok = <T = null>(data: T = null as T): Outcome<T> => ({ kind: 'ok', data })
+export const failed = (reason: string): Outcome<never> => ({ kind: 'failed', reason })
 
 export interface Registration {
   readonly name: string
