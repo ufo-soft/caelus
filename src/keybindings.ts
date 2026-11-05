@@ -79,16 +79,15 @@ function chord(mods: readonly string[], key: string): string {
 
 /** Merge patch over defaults per canonical chord. UNBIND and unknown commands remove the chord. */
 export function resolve(defaults: Keymap, patch: Keymap, registry: Registry): Map<string, string> {
-  const out = new Map<string, string>()
-  for (const layer of [defaults, patch]) {
-    for (const [chord, name] of Object.entries(layer)) {
-      const key = canonical(chord)
-      if (!key) continue
-      if (name === UNBIND || !registry.retrieve(name)) out.delete(key)
-      else out.set(key, name)
-    }
-  }
-  return out
+  const merged = { ...canonicalized(defaults), ...canonicalized(patch) }
+  const bound = Object.entries(merged).filter(([, name]) => name !== UNBIND && registry.retrieve(name))
+  return new Map(bound)
+}
+
+/** Re-key a layer by canonical chord, dropping entries that don't parse. */
+function canonicalized(layer: Keymap): Keymap {
+  const entries = Object.entries(layer).map(([chord, name]) => [canonical(chord), name])
+  return Object.fromEntries(entries.filter(([key]) => key))
 }
 
 type KeyTarget = Pick<EventTarget, 'addEventListener'>
