@@ -1,6 +1,19 @@
-import { Registry } from "./core";
+import { parse } from 'smol-toml'
 
-type Keymap = Record<string, string>;
+import { Registry, Outcome, ok, failed } from './core'
+
+type Keymap = Record<string, string>
+
+/** Reads the [bindings] table of a TOML keymap. No table is an empty patch; a malformed document is a failure. */
+export function parseKeymap(text: string): Outcome<Keymap> {
+  try {
+    const table = parse(text).bindings
+    const entries = typeof table !== 'object' || Array.isArray(table) ? [] : Object.entries(table)
+    return ok(Object.fromEntries(entries.filter(([, value]) => typeof value === 'string')))
+  } catch (e) {
+    return failed(e instanceof Error ? e.message : String(e))
+  }
+}
 
 const MODIFIERS = ['cmd', 'ctrl', 'alt', 'shift'] as const
 type Modifier = (typeof MODIFIERS)[number]

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { Registry, ok } from '../src/core.js'
-import { attach, canonical, chordOf, resolve } from '../src/keybindings.js'
+import { attach, canonical, chordOf, parseKeymap, resolve } from '../src/keybindings.js'
 
 /** A registry with the named commands; `fired` records which ones ran. */
 function registryOf(names: string[], fired: string[] = []): Registry {
@@ -102,6 +102,40 @@ describe('chordOf', () => {
     expect(chordOf(ev('k', 'KeyK', { meta: true, shift: true }))).toBe(canonical('shift+cmd+k'))
     expect(chordOf(ev('!', 'Digit1', { shift: true }))).toBe(canonical('shift+1'))
     expect(chordOf(ev('Escape', 'Escape'))).toBe(canonical('esc'))
+  })
+})
+
+describe('parseKeymap', () => {
+  it('reads the bindings table, quoted keys unquoted', () => {
+    const toml = `
+      # rebind the dialog
+      [bindings]
+      "cmd+i" = "openItemDialog"
+      "cmd+n" = "unbind"
+    `
+    expect(parseKeymap(toml)).toEqual(ok({ 'cmd+i': 'openItemDialog', 'cmd+n': 'unbind' }))
+  })
+
+  it('treats a missing bindings table as an empty patch', () => {
+    expect(parseKeymap('')).toEqual(ok({}))
+    expect(parseKeymap('[settings]\ntheme = "dark"')).toEqual(ok({}))
+  })
+
+  it('drops non-string values and ignores other sections', () => {
+    const toml = `
+      [bindings]
+      "cmd+i" = "openItemDialog"
+      "cmd+k" = 3
+      [settings]
+      theme = "dark"
+    `
+    expect(parseKeymap(toml)).toEqual(ok({ 'cmd+i': 'openItemDialog' }))
+  })
+
+  it('fails on malformed TOML with the parser message', () => {
+    const outcome = parseKeymap('[bindings]\n"cmd+i" = ')
+    expect(outcome.kind).toBe('failed')
+    if (outcome.kind === 'failed') expect(outcome.reason).toMatch(/Invalid TOML/)
   })
 })
 
