@@ -1,8 +1,9 @@
 name: Release
 
-# Triggered by `npm version <patch|minor|major>` followed by `git push --follow-tags`.
-# Publishes to npm via trusted publishing (OIDC, no token secret) and creates the
-# GitHub Release for the same commit.
+# Triggered by a v* tag. All packages share one version: bump with
+# `npm version <patch|minor|major> --workspaces --no-git-tag-version`, commit, tag, push --follow-tags.
+# Publishes every public workspace package via trusted publishing (OIDC, no token secret)
+# and creates the GitHub Release for the same commit.
 
 on:
   push:
@@ -25,9 +26,9 @@ jobs:
       # trusted publishing needs npm 11.5.1+; node 22 ships an older one
       - run: npm install -g npm@latest
       - run: npm ci
-      - run: npx tsc --noEmit -p .
+      - run: npm run check
       - run: npm test
-      - run: npm publish --provenance
+      - run: npm publish --workspaces --provenance
       - run: gh release create "$GITHUB_REF_NAME" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}

@@ -1,0 +1,33 @@
+{
+  "name": "@ufo-soft/caelus",
+  "version": "0.1.0",
+  "description": "A command registry: define a command once, dispatch it from any surface.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ufo-soft/caelus.git",
+    "directory": "packages/caelus"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/core.js",
+  "types": "./dist/core.d.ts",
+  "exports": {
+    ".": "./dist/core.js",
+    "./keybindings": "./dist/keybindings.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "smol-toml": "^1.9.1"
+  }
+}
