@@ -3,49 +3,43 @@
 Define a command once. Dispatch it from anywhere — a button, a key chord, a
 CLI subcommand, an MCP tool call.
 
-A command registry: commands are self-describing runtime objects, so any
-surface can project them outward without core knowing that surface exists.
-
 This is a TypeScript port of the Kotlin Multiplatform prototype at
 [ufo-soft/caelus-old](https://github.com/ufo-soft/caelus-old).
 
-## Core
+## Packages
 
-Zero dependencies. `src/core.ts` is the whole thing.
+| package | what |
+|---|---|
+| [`@ufo-soft/caelus`](packages/caelus) | the registry and the keybindings surface |
 
-```ts
-import { Registry, ok, failed } from '@ufo-soft/caelus'
-
-const registry = new Registry()
-
-registry.register({
-  name: 'add',
-  command: {
-    description: 'Add a todo',
-    parameters: [{ name: 'text', type: 'string', description: 'The todo text' }],
-  },
-  handler: ({ text }) => {
-    if (typeof text !== 'string') return failed('text must be a string')
-    store.add(text)
-    return ok()
-  },
-})
-
-registry.invoke('add', { text: 'write it down' })
-```
-
-Adapters (keybindings, CLI, MCP, UI) are out of scope for now.
+Adapters that carry their own dependencies get their own package, so an app
+only installs what it uses.
 
 ## Development
 
 ```sh
 npm install
 npm test
+npm run check    # type-checks every package
 npm run build
 npm run dev      # builds, then serves example/ with Vite
 npm run electron # builds, then opens the same example in an Electron window
 ```
 
-`example/` is a plain browser app that depends on the package by name, so it
-exercises the real `exports` map and the built `dist/`. When editing `src/`
-with the example open, run `npx tsc --watch` alongside so `dist/` stays fresh.
+`example/` is a plain browser app that depends on the packages by name, so it
+exercises the real `exports` maps and the built `dist/`. When editing a package
+with the example open, run `npx tsc --watch -p packages/caelus` alongside so
+its `dist/` stays fresh.
+
+## Releasing
+
+All packages share one version and release together on one tag.
+
+```sh
+npm version patch --workspaces --no-git-tag-version
+git commit -am "v0.1.1" && git tag v0.1.1
+git push --follow-tags
+```
+
+The tag triggers the release workflow, which publishes every public package
+and creates the GitHub Release.

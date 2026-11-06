@@ -19,23 +19,28 @@ Follow `.claude/code-style-guide.md`. Short version: build values as expressions
 ## Layout
 
 ```
-src/core.ts          Registry, Registration, Command, Parameter, Outcome. The narrow waist.
-src/keybindings.ts   canonical, chordOf, parseKeymap, resolve, attach, keybindings. One file by design.
-test/                One test file per module. Fakes are small helpers in the test file.
+packages/caelus/     @ufo-soft/caelus
+  src/core.ts          Registry, Registration, Command, Parameter, Outcome, forward. The narrow waist.
+  src/keybindings.ts   canonical, chordOf, parseKeymap, resolve, attach, keybindings. One file by design.
+  test/                One test file per module. Fakes are small helpers in the test file.
+example/             A plain browser app, also wrapped in Electron, for developing against the packages.
 docs/                Architecture and the extracted brainstorm transcripts.
 ```
+
+npm workspaces. An adapter that carries its own dependency (CLI, MCP) is its own package under
+`packages/`, so an app installs only what it uses. All packages share one version.
 
 Keep modules to one file until a file genuinely can't be read in one sitting.
 
 ## Commands
 
 ```sh
-npm test             # vitest run
-npx tsc --noEmit -p .
-npm run build        # tsc to dist/
+npm test             # vitest run, every package
+npm run check        # tsc --noEmit, every package
+npm run build        # tsc to each package's dist/
 ```
 
-Run both the type-check and the tests after any change to `src/`.
+Run both the type-check and the tests after any change under `packages/`.
 
 ## Keybindings in one paragraph
 
