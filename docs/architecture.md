@@ -16,13 +16,13 @@ classDiagram
         +register(Registration | Registration[])
         +retrieve(string) Registration?
         +all() Registration[]
-        +invoke(string, Args) Outcome
+        +invoke(string, Args) Promise~Outcome~
     }
 
     class Registration {
         +string name
         +Command command
-        +handler(Args) Outcome
+        +handler(Args) Outcome | Promise~Outcome~
     }
 
     class Command {
@@ -80,7 +80,7 @@ graph TD
     tool["MCP tools/call"] --> registry
     sub["CLI subcommand"] --> registry
 
-    registry --> invoke["invoke(name, args) → Outcome"]
+    registry --> invoke["invoke(name, args) → Promise<Outcome>"]
 
     classDef hub fill:#fff3e0,stroke:#f57c00;
     class registry,invoke hub;

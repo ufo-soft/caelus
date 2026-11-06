@@ -37,30 +37,40 @@ const trivial = (name: string): Registration => ({
 })
 
 describe('Registry', () => {
-  it('invoke with a valid string arg returns Ok and runs the handler', () => {
+  it('invoke with a valid string arg returns Ok and runs the handler', async () => {
     const received: string[] = []
     const registry = registryWithCoolThing(received)
 
-    const outcome = registry.invoke('doThingInCoolApp', { message: 'this is a message' })
+    const outcome = await registry.invoke('doThingInCoolApp', { message: 'this is a message' })
 
     expect(outcome).toEqual(ok())
     expect(received).toEqual(['this is a message'])
   })
 
-  it('invoke with a wrong arg type returns Failed and skips the handler', () => {
+  it('invoke with a wrong arg type returns Failed and skips the handler', async () => {
     const received: string[] = []
     const registry = registryWithCoolThing(received)
 
-    const outcome = registry.invoke('doThingInCoolApp', { message: 1234 })
+    const outcome = await registry.invoke('doThingInCoolApp', { message: 1234 })
 
     expect(outcome).toEqual(failed('message must be a string'))
     expect(received).toEqual([])
   })
 
-  it('invoke of an unknown command returns Failed', () => {
-    const outcome = new Registry().invoke('nope', {})
+  it('invoke of an unknown command returns Failed', async () => {
+    const outcome = await new Registry().invoke('nope', {})
 
     expect(outcome).toEqual(failed('no command named nope'))
+  })
+
+  it('invoke awaits an async handler', async () => {
+    const registry = new Registry()
+    registry.register({
+      ...trivial('slow'),
+      handler: () => Promise.resolve(ok('done')),
+    })
+
+    expect(await registry.invoke('slow', {})).toEqual(ok('done'))
   })
 
   it('register(list) registers every registration', () => {
