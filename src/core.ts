@@ -30,6 +30,15 @@ export interface Registration {
   readonly handler: (args: Args) => Outcome | Promise<Outcome>
 }
 
+/** Registrations for commands whose work happens in another process: every handler sends its name and args
+ *  through `send` and returns whatever comes back. The app supplies `send`: fetch, a socket, IPC. */
+export function forward(
+  commands: Readonly<Record<string, Command>>,
+  send: (name: string, args: Args) => Promise<Outcome>,
+): Registration[] {
+  return Object.entries(commands).map(([name, command]) => ({ name, command, handler: (args) => send(name, args) }))
+}
+
 export class Registry {
   readonly #registrations = new Map<string, Registration>()
 
