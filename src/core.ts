@@ -27,7 +27,7 @@ export const failed = (reason: string): Outcome<never> => ({ kind: FAILED, reaso
 export interface Registration {
   readonly name: string
   readonly command: Command
-  readonly handler: (args: Args) => Outcome
+  readonly handler: (args: Args) => Outcome | Promise<Outcome>
 }
 
 export class Registry {
@@ -45,7 +45,9 @@ export class Registry {
     return [...this.#registrations.values()]
   }
 
-  invoke(name: string, args: Args): Outcome {
+  /** Always a promise, so a handler and a remote registry look the same to the caller.
+   *  The handler runs synchronously up to its first await. */
+  async invoke(name: string, args: Args): Promise<Outcome> {
     const registration = this.#registrations.get(name)
     if (!registration) return failed(`no command named ${name}`)
     return registration.handler(args)

@@ -98,7 +98,7 @@ export function attach(table: () => ReadonlyMap<string, string>, registry: Regis
     const name = table().get(chordOf(e as KeyboardEvent))
     if (name) {
       e.preventDefault()
-      registry.invoke(name, {})
+      void registry.invoke(name, {})
     }
   }
   target.addEventListener('keydown', listener)
