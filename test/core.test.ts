@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { Registry, failed, ok } from '../src/core.js'
-import type { Registration } from '../src/core.js'
+import { Registry, failed, forward, ok } from '../src/core.js'
+import type { Args, Registration } from '../src/core.js'
 
 /** A registry with "doThingInCoolApp" registered. `received` captures what the
  *  handler actually got, so the happy path is assertable. */
@@ -88,6 +88,24 @@ describe('Registry', () => {
     registry.register(names.map(trivial))
 
     expect(registry.all().map((r) => r.name)).toEqual(names)
+  })
+
+  it('forward() registrations carry the description and send name and args through', async () => {
+    const sent: [string, Args][] = []
+    const registry = new Registry()
+    registry.register(
+      forward(
+        { add: { description: 'Add', parameters: [{ name: 'text', type: 'string', description: 'What' }] } },
+        async (name, args) => {
+          sent.push([name, args])
+          return ok('from afar')
+        },
+      ),
+    )
+
+    expect(registry.retrieve('add')?.command.description).toBe('Add')
+    expect(await registry.invoke('add', { text: 'milk' })).toEqual(ok('from afar'))
+    expect(sent).toEqual([['add', { text: 'milk' }]])
   })
 
   it('retrieve() returns a registration, or undefined when absent', () => {
