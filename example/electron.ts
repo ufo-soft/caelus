@@ -5,7 +5,7 @@ import { BrowserWindow, app, ipcMain } from 'electron'
 import { rmSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { text } from 'node:stream/consumers'
-import { Registry, failed, ok } from '@ufo-soft/caelus'
+import { Registry, bind, failed, ok } from '@ufo-soft/caelus'
 import type { Args, Outcome } from '@ufo-soft/caelus'
 
 import { SOCKET, runCli } from './client.js'
@@ -41,11 +41,13 @@ if (flag !== -1) {
 function counter(): Registry {
   let count = 0
   const registry = new Registry()
-  registry.bind(commands, {
-    increment: () => ok(++count),
-    decrement: () => ok(--count),
-    reset: () => ok((count = 0)),
-  })
+  registry.register(
+    bind(commands, {
+      increment: () => ok(++count),
+      decrement: () => ok(--count),
+      reset: () => ok((count = 0)),
+    }),
+  )
   return registry
 }
 

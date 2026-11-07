@@ -4,7 +4,7 @@ import { connect } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { text } from 'node:stream/consumers'
-import { Registry, failed } from '@ufo-soft/caelus'
+import { Registry, failed, forward } from '@ufo-soft/caelus'
 import type { Send } from '@ufo-soft/caelus'
 import { cli } from '@ufo-soft/caelus-cli'
 
@@ -25,6 +25,6 @@ export const send: Send = async (name, args) => {
 /** The CLI against a running instance. Both entries call this and differ only in how they exit. */
 export function runCli(argv: readonly string[]): Promise<number> {
   const registry = new Registry()
-  registry.forward(commands, send)
-  return cli(registry, argv, undefined, 'caelus-example')
+  registry.register(forward(commands, send))
+  return cli(registry, argv, 'caelus-example')
 }
