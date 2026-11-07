@@ -4,10 +4,11 @@
 import { BrowserWindow, app, ipcMain } from 'electron'
 import { rmSync } from 'node:fs'
 import { createServer } from 'node:net'
-import { join } from 'node:path'
-import { Registry, ok } from '@ufo-soft/caelus'
+import { Registry, forward, ok } from '@ufo-soft/caelus'
 import type { Args } from '@ufo-soft/caelus'
+import { cli } from '@ufo-soft/caelus-cli'
 
+import { SOCKET, send } from './client.js'
 import { commands } from './commands.js'
 
 let count = 0
@@ -23,8 +24,6 @@ ipcMain.handle('caelus:invoke', (_event, name: string, args: Args) => registry.i
 
 /** One request per connection: the client writes { name, args } and half-closes;
  *  the Outcome comes back as JSON and the connection ends. */
-export const SOCKET = join(app.getPath('userData'), 'caelus.sock')
-
 function listen(): void {
   rmSync(SOCKET, { force: true }) // left behind if the last run was killed
   // allowHalfOpen: the client half-closes after writing, and the answer goes back on the open half
@@ -38,13 +37,24 @@ function listen(): void {
   }).listen(SOCKET)
 }
 
-app.whenReady().then(() => {
-  listen()
-  new BrowserWindow({
-    width: 900,
-    height: 720,
-    webPreferences: { preload: `${import.meta.dirname}/preload.cjs` },
-  }).loadFile('dist/index.html')
-})
+// `electron . --cli <args>`: no window, no listener. This process is a client of a
+// running instance, exactly like cli.js, just started through the Electron binary.
+const flag = process.argv.indexOf('--cli')
 
-app.on('window-all-closed', () => app.quit())
+if (flag !== -1) {
+  app.dock?.hide()
+  const client = new Registry()
+  client.register(forward(commands, send))
+  cli(client, process.argv.slice(flag + 1), undefined, 'caelus-example').then((code) => app.exit(code))
+} else {
+  app.whenReady().then(() => {
+    listen()
+    new BrowserWindow({
+      width: 900,
+      height: 720,
+      webPreferences: { preload: `${import.meta.dirname}/preload.cjs` },
+    }).loadFile('dist/index.html')
+  })
+
+  app.on('window-all-closed', () => app.quit())
+}
