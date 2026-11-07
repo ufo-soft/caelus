@@ -38,12 +38,12 @@ export function bind<C extends Record<string, Command>>(commands: C, handlers: {
   return Object.entries(commands).map(([name, command]) => ({ name, command, handler: handlers[name] }))
 }
 
+/** Carries an invoke to a registry in another process. The app supplies it: fetch, a socket, IPC. */
+export type Send = (name: string, args: Args) => Promise<Outcome>
+
 /** Registrations for commands whose work happens in another process: every handler sends its name and args
- *  through `send` and returns whatever comes back. The app supplies `send`: fetch, a socket, IPC. */
-export function forward(
-  commands: Readonly<Record<string, Command>>,
-  send: (name: string, args: Args) => Promise<Outcome>,
-): Registration[] {
+ *  through `send` and returns whatever comes back. */
+export function forward(commands: Readonly<Record<string, Command>>, send: Send): Registration[] {
   return Object.entries(commands).map(([name, command]) => ({ name, command, handler: (args) => send(name, args) }))
 }
 
@@ -52,6 +52,16 @@ export class Registry {
 
   register(registrations: Registration | readonly Registration[]): void {
     for (const r of [registrations].flat()) this.#registrations.set(r.name, r)
+  }
+
+  /** register(bind(commands, handlers)) */
+  bind<C extends Record<string, Command>>(commands: C, handlers: { [K in keyof C]: Handler }): void {
+    this.register(bind(commands, handlers))
+  }
+
+  /** register(forward(commands, send)) */
+  forward(commands: Readonly<Record<string, Command>>, send: Send): void {
+    this.register(forward(commands, send))
   }
 
   retrieve(name: string): Registration | undefined {

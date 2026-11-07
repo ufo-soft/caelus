@@ -113,6 +113,17 @@ describe('Registry', () => {
     bind(commands, { up: () => ok(), sideways: () => ok() })
   })
 
+  it('registry.bind() and registry.forward() register what the functions build', async () => {
+    const registry = new Registry()
+    const commands = { up: { description: 'Up', parameters: [] } } satisfies Record<string, Command>
+
+    registry.bind(commands, { up: () => ok('local') })
+    registry.forward({ far: { description: 'Far', parameters: [] } }, async (name) => ok(`sent ${name}`))
+
+    expect(await registry.invoke('up', {})).toEqual(ok('local'))
+    expect(await registry.invoke('far', {})).toEqual(ok('sent far'))
+  })
+
   it('forward() registrations carry the description and send name and args through', async () => {
     const sent: [string, Args][] = []
     const registry = new Registry()
