@@ -51,7 +51,8 @@ examples/            One app per architecture, the same counter in each, sharing
   desktop/             Electron main owns the counter; renderer forwards over IPC, CLI over a socket.
   web/api/             AdonisJS back end: counter in SQLite behind its own REST API. The registry sits beside
                        it, not inside it; if removing the registry leaves a normal Adonis app, it's right.
-  web/app/             The page for web: a plain fetch client of the API, VITE_API_URL says where.
+  web/app/             The page for web: the registry's forwarders dispatch into a REST client, VITE_API_URL says where.
+                       The api, page and bin share api/registry/descriptions.ts, as desktop's processes share theirs.
 docs/                Architecture and the extracted brainstorm transcripts.
 ```
 

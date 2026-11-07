@@ -30,7 +30,9 @@ npm run desktop  # builds, then opens examples/desktop in an Electron window
 Each example is the same app, a counter with three commands, built as a
 different architecture. They deliberately share no code: what stays constant
 is the behavior, so the only variable between them is where the registry
-lives and how surfaces reach it.
+lives and how surfaces reach it. Within one example, the processes do share
+their command descriptions, the way `desktop`'s main and renderer do; `web`'s
+api, page and bin share `api/registry/descriptions.ts` the same way.
 
 | example | shape |
 |---|---|

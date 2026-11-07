@@ -1,12 +1,16 @@
 // The page. The counter lives on the server; every counter command here is a forwarder
 // whose send() is a dispatch into the REST client. clearLog is the one command that lives
-// in the page. Same descriptions as the server binds, imported from the API's source.
+// in the page. Same descriptions as the server binds, compiled in from the API's source.
 import { OK, Registry, failed, forward, ok } from '@ufo-soft/caelus'
 import type { Send } from '@ufo-soft/caelus'
 import { keybindings } from '@ufo-soft/caelus/keybindings'
 
-import { commands } from '../api/start/commands.js'
-import { counter, current } from './api.js'
+import { commands } from '../api/registry/descriptions.js'
+import { counter } from './api.js'
+
+// The REST client is the whole REST-to-command mapping. Checked here, not in the client,
+// so the client stays the ordinary one it was: a described command with no call fails to compile.
+counter satisfies Record<keyof typeof commands, () => Promise<number>>
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
 
@@ -20,27 +24,30 @@ const log = (line: string) => {
   el.scrollTop = el.scrollHeight
 }
 
+const reason = (error: unknown) => (error instanceof Error ? error.message : String(error))
+
 // --- commands --------------------------------------------------------------------
 
 // A name goes in, the matching REST call goes out. A failed request is a failed Outcome.
 const send: Send = async (name) => {
-  const call = counter[name as keyof typeof counter]
-  if (!call) return failed(`no endpoint for ${name}`)
   try {
-    return ok(await call())
+    return ok(await counter[name as keyof typeof counter]())
   } catch (error) {
-    return failed(error instanceof Error ? error.message : String(error))
+    return failed(reason(error))
   }
 }
+
+// Requests overlap under key repeat and answers can land out of order: only the latest renders.
+let latest = 0
 
 const registry = new Registry()
 
 registry.register(
   forward(commands, async (name, args) => {
+    const request = ++latest
     const outcome = await send(name, args)
-    log(name)
-    if (outcome.kind === OK) render(outcome.data)
-    else $('status').textContent = outcome.reason
+    log(outcome.kind === OK ? name : `${name}: ${outcome.reason}`)
+    if (outcome.kind === OK && request === latest) render(outcome.data)
     return outcome
   }),
 )
@@ -103,4 +110,4 @@ $('reload').onclick = async () => {
 }
 
 renderTable()
-current().then(render, (error) => ($('status').textContent = String(error)))
+counter.current().then(render, (error) => log(`current: ${reason(error)}`))
