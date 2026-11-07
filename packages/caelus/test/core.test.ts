@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { Registry, bind, failed, forward, ok } from '../src/core.js'
-import type { Args, Commands, Registration } from '../src/core.js'
+import type { Args, Command, Commands, Registration } from '../src/core.js'
 
 /** A registry with "doThingInCoolApp" registered. `received` captures what the
  *  handler actually got, so the happy path is assertable. */
@@ -111,17 +111,14 @@ describe('Registry', () => {
     bind(commands, {})
     // @ts-expect-error a handler for a command that is not described
     bind(commands, { up: () => ok(), sideways: () => ok() })
-  })
 
-  it('registry.bind() and registry.forward() register what the functions build', async () => {
-    const registry = new Registry()
-    const commands = { up: { description: 'Up', parameters: [] } } satisfies Commands
+    const optional: { up: Command; down?: Command } = commands
+    // @ts-expect-error an optional description still needs its handler
+    bind(optional, { up: () => ok() })
 
-    registry.bind(commands, { up: () => ok('local') })
-    registry.forward({ far: { description: 'Far', parameters: [] } }, async (name) => ok(`sent ${name}`))
-
-    expect(await registry.invoke('up', {})).toEqual(ok('local'))
-    expect(await registry.invoke('far', {})).toEqual(ok('sent far'))
+    const widened: Commands = commands
+    // @ts-expect-error descriptions typed as plain Commands can't be checked, so they're refused
+    bind(widened, {})
   })
 
   it('forward() registrations carry the description and send name and args through', async () => {
