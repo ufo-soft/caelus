@@ -13,11 +13,11 @@ import { commands } from './commands.js'
 let count = 0
 
 const registry = new Registry()
-registry.register([
-  { name: 'increment', command: commands.increment, handler: () => ok(++count) },
-  { name: 'decrement', command: commands.decrement, handler: () => ok(--count) },
-  { name: 'reset', command: commands.reset, handler: () => ok((count = 0)) },
-])
+registry.bind(commands, {
+  increment: () => ok(++count),
+  decrement: () => ok(--count),
+  reset: () => ok((count = 0)),
+})
 
 ipcMain.handle('caelus:invoke', (_event, name: string, args: Args) => registry.invoke(name, args))
 

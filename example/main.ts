@@ -1,4 +1,4 @@
-import { OK, Registry, forward, ok } from '@ufo-soft/caelus'
+import { OK, Registry, ok } from '@ufo-soft/caelus'
 import type { Args, Outcome } from '@ufo-soft/caelus'
 import { keybindings } from '@ufo-soft/caelus/keybindings'
 
@@ -37,14 +37,12 @@ const local: Record<string, () => Outcome> = {
 }
 const run = window.caelus?.send ?? (async (name: string) => local[name]())
 
-registry.register(
-  forward(commands, async (name, args) => {
-    const outcome = await run(name, args)
-    log(name)
-    if (outcome.kind === OK) render(outcome.data)
-    return outcome
-  }),
-)
+registry.forward(commands, async (name, args) => {
+  const outcome = await run(name, args)
+  log(name)
+  if (outcome.kind === OK) render(outcome.data)
+  return outcome
+})
 
 // A UI command: only exists where the UI is.
 registry.register({
