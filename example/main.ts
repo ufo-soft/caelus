@@ -1,13 +1,19 @@
-import { Registry, ok } from '@ufo-soft/caelus'
+import { OK, Registry, ok } from '@ufo-soft/caelus'
+import type { Args, Outcome } from '@ufo-soft/caelus'
 import { keybindings } from '@ufo-soft/caelus/keybindings'
+
+import { commands } from './commands.js'
+
+// what preload.cts exposes under Electron; absent in a plain browser
+declare global {
+  interface Window {
+    caelus?: { send(name: string, args: Args): Promise<Outcome> }
+  }
+}
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
 
-// --- app state: a counter, so the commands have something to do -------------
-
-let count = 0
-
-const render = () => {
+const render = (count: unknown) => {
   $('count').textContent = String(count)
 }
 
@@ -17,27 +23,36 @@ const log = (line: string) => {
   el.scrollTop = el.scrollHeight
 }
 
-// --- commands, defined once --------------------------------------------------
+// --- commands --------------------------------------------------------------------
 
 const registry = new Registry()
 
-const simple = (name: string, description: string, run: () => void) => ({
-  name,
-  command: { description, parameters: [] },
+// Counter commands are forwarded: to Electron main when its preload is present,
+// otherwise to an in-process counter so the page works in a plain browser.
+let count = 0
+const local: Record<string, () => Outcome> = {
+  increment: () => ok(++count),
+  decrement: () => ok(--count),
+  reset: () => ok((count = 0)),
+}
+const run = window.caelus?.send ?? (async (name: string) => local[name]())
+
+registry.forward(commands, async (name, args) => {
+  const outcome = await run(name, args)
+  log(name)
+  if (outcome.kind === OK) render(outcome.data)
+  return outcome
+})
+
+// A UI command: only exists where the UI is.
+registry.register({
+  name: 'clearLog',
+  command: { description: 'Empty the log', parameters: [] },
   handler: () => {
-    run()
-    log(name)
-    render()
+    $('log').replaceChildren()
     return ok()
   },
 })
-
-registry.register([
-  simple('increment', 'Add one', () => count++),
-  simple('decrement', 'Subtract one', () => count--),
-  simple('reset', 'Back to zero', () => (count = 0)),
-  simple('clearLog', 'Empty the log', () => $('log').replaceChildren()),
-])
 
 // --- surface 1: buttons, generated from the registry -------------------------
 
@@ -88,4 +103,4 @@ $('reload').onclick = async () => {
 }
 
 renderTable()
-render()
+render(count)
