@@ -49,6 +49,8 @@ packages/cli/        @ufo-soft/caelus-cli: cli, optionOf, argsOf. A registry as 
 examples/            One app per architecture, the same counter in each, sharing no code on purpose.
   browser/             One process: everything in the page.
   desktop/             Electron main owns the counter; renderer forwards over IPC, CLI over a socket.
+  web/api/             AdonisJS back end: counter in SQLite behind its own REST API. The registry sits beside
+                       it, not inside it; if removing the registry leaves a normal Adonis app, it's right.
 docs/                Architecture and the extracted brainstorm transcripts.
 ```
 

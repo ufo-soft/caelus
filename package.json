@@ -4,12 +4,14 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "examples/web/*"
   ],
   "scripts": {
     "build": "tsc -b && tsc -p examples/browser && tsc -p examples/desktop",
     "browser": "npm run build && npm run dev -w examples/browser",
     "desktop": "npm run build && npm run electron -w examples/desktop",
+    "web:api": "npm run dev -w examples/web/api",
     "pretest": "npm run build && tsc -p tsconfig.test.json",
     "test": "vitest run"
   },
