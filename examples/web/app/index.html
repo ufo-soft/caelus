@@ -10,22 +10,31 @@
       h2 { font-size: 1rem; margin: 0 0 0.5rem; }
       #count { font-size: 3rem; font-weight: 600; }
       #buttons button { margin-right: 0.5rem; }
-      #status { color: #b00; }
+      textarea { width: 100%; height: 8rem; font-family: ui-monospace, monospace; }
+      #status { color: #666; }
+      #status.failed { color: #b00; }
       #log { height: 8rem; overflow-y: auto; font-family: ui-monospace, monospace; font-size: 13px; background: #f4f4f4; padding: 0.5rem; }
+      td { padding-right: 1rem; }
     </style>
   </head>
   <body>
     <h1>caelus</h1>
-    <p>The counter lives on the server. This page is an ordinary REST client.</p>
+    <p>The counter lives on the server. Buttons and key chords both dispatch through one registry; its forwarders call the REST API.</p>
 
     <section>
       <div id="count">…</div>
-      <div id="buttons">
-        <button id="increment">increment</button>
-        <button id="decrement">decrement</button>
-        <button id="reset">reset</button>
-      </div>
-      <div id="status"></div>
+      <div id="buttons"></div>
+    </section>
+
+    <section>
+      <h2>Bindings</h2>
+      <table id="table"></table>
+    </section>
+
+    <section>
+      <h2>User keymap (TOML)</h2>
+      <textarea id="keymap" spellcheck="false"></textarea>
+      <div><button id="reload">Reload</button> <span id="status"></span></div>
     </section>
 
     <section>

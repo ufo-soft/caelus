@@ -37,7 +37,7 @@ lives and how surfaces reach it.
 | `examples/browser` | one process: counter, registry, keys and buttons all in the page |
 | `examples/desktop` | Electron main owns the counter; the renderer forwards over IPC, a CLI forwards over a local socket |
 | `examples/web/api` | an AdonisJS back end owns the counter in SQLite behind its own REST API; the registry sits beside it |
-| `examples/web/app` | the browser half of `web`: a page that talks to the API over `fetch`, with the API's URL in `VITE_API_URL` |
+| `examples/web/app` | the browser half of `web`: the same page as the others, whose forwarders dispatch into a hand-written REST client; the API's URL is in `VITE_API_URL` |
 
 `examples/web/api` has its own toolchain, so it isn't part of the root build.
 First run, from `examples/web/api`:
