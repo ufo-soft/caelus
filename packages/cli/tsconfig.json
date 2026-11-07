@@ -4,10 +4,11 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
-    "declaration": true,
+    "composite": true,
     "rootDir": "src",
     "outDir": "dist",
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [{ "path": "../caelus" }]
 }

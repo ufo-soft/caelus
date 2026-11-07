@@ -22,8 +22,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
-    "check": "tsc --noEmit",
+    "build": "tsc -b",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {

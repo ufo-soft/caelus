@@ -7,10 +7,10 @@
     "example"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "check": "npm run check --workspaces --if-present",
+    "build": "tsc -b",
     "dev": "npm run build && npm run dev -w example",
     "electron": "npm run build && npm run electron -w example",
+    "pretest": "npm run build",
     "test": "vitest run"
   },
   "devDependencies": {
