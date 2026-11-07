@@ -99,6 +99,14 @@ Use types to make a wrong *program* fail to compile, not to re-describe what the
 
 Prefer a two-case or discriminated union over a bag of optional fields. Avoid `any`; take `unknown` and narrow.
 
+**Name a structural type when it means a concept and appears in a public signature more than once.**
+`ReadonlyMap<string, string>` says what a value is made of; `Table` says what it is for, and lets
+`reload(): Promise<Outcome<Table>>` read as a sentence. Two shapes that are structurally identical but
+mean different things (`Keymap` before resolution, `Table` after; `Args` by parameter name, `Parsed` by
+commander's attribute name) get two names, because the name is the only thing that keeps them apart.
+A one-off internal stays inline; an alias nobody reads twice is noise. Export any alias that appears in
+an exported signature, or the `.d.ts` shows the consumer the expansion instead of the name.
+
 ---
 
 ## 6. Early Returns Over Else Branches

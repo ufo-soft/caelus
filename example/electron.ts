@@ -9,6 +9,7 @@ import { Registry, bind, failed, ok } from '@ufo-soft/caelus'
 import type { Args, Outcome } from '@ufo-soft/caelus'
 
 import { SOCKET, runCli } from './client.js'
+import type { Request } from './client.js'
 import { commands } from './commands.js'
 
 // `electron . --cli <args>`: no window, no registry of its own. This process is a client of
@@ -79,7 +80,7 @@ async function answer(registry: Registry, request: string): Promise<Outcome> {
   }
 }
 
-function parse(request: string): { name: string; args: Args } | undefined {
+function parse(request: string): Request | undefined {
   try {
     const { name, args } = JSON.parse(request)
     return typeof name === 'string' ? { name, args: args ?? {} } : undefined
