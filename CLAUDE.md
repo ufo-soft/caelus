@@ -48,7 +48,8 @@ packages/caelus/     @ufo-soft/caelus
 packages/cli/        @ufo-soft/caelus-cli: cli, optionOf, argsOf. A registry as a commander CLI.
 examples/            One app per architecture, the same counter in each, sharing no code on purpose.
   browser/             One process: everything in the page.
-  desktop/             Electron main owns the counter; renderer forwards over IPC, CLI over a socket.
+  desktop/             The counter is a SQLite row; main and the CLI each hold a registry on the file, no bridge.
+                       The renderer forwards to main over IPC and polls the count. The prototype's shape.
   web/api/             AdonisJS back end: counter in SQLite behind its own REST API. The registry sits beside
                        it, not inside it; if removing the registry leaves a normal Adonis app, it's right.
   web/app/             The page for web: the registry's forwarders dispatch into a REST client, VITE_API_URL says where.

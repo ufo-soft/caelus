@@ -37,7 +37,7 @@ api, page and bin share `api/registry/descriptions.ts` the same way.
 | example | shape |
 |---|---|
 | `examples/browser` | one process: counter, registry, keys and buttons all in the page |
-| `examples/desktop` | Electron main owns the counter; the renderer forwards over IPC, a CLI forwards over a local socket |
+| `examples/desktop` | the counter is a row in `~/.caelus-example.sqlite`; Electron main and the CLI each hold a registry on that file with no bridge between them, and the renderer forwards to main over IPC |
 | `examples/web/api` | an AdonisJS back end owns the counter in SQLite behind its own REST API; the registry sits beside it |
 | `examples/web/app` | the browser half of `web`: the same page as the others, whose forwarders dispatch into a hand-written REST client; the API's URL is in `VITE_API_URL` |
 | `examples/web/cli` | a standalone `counter` binary: the same descriptions, forwarded to the API's invoke route over HTTP; `COUNTER_API` says where |

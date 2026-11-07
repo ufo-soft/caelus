@@ -1,4 +1,4 @@
-// `node dist/cli.js <args>`: a client of a running instance, without booting Electron.
-import { runCli } from './client.js'
+// `node dist/cli.js <args>`: the CLI on the shared file, without booting Electron.
+import { runCli } from './counter.js'
 
 process.exitCode = await runCli(process.argv.slice(2))
