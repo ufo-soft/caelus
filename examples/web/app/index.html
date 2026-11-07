@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>caelus example: web</title>
+    <style>
+      body { font: 15px/1.5 system-ui, sans-serif; max-width: 48rem; margin: 2rem auto; padding: 0 1rem; }
+      section { margin-bottom: 1.5rem; }
+      h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+      #count { font-size: 3rem; font-weight: 600; }
+      #buttons button { margin-right: 0.5rem; }
+      #status { color: #b00; }
+      #log { height: 8rem; overflow-y: auto; font-family: ui-monospace, monospace; font-size: 13px; background: #f4f4f4; padding: 0.5rem; }
+    </style>
+  </head>
+  <body>
+    <h1>caelus</h1>
+    <p>The counter lives on the server. This page is an ordinary REST client.</p>
+
+    <section>
+      <div id="count">…</div>
+      <div id="buttons">
+        <button id="increment">increment</button>
+        <button id="decrement">decrement</button>
+        <button id="reset">reset</button>
+      </div>
+      <div id="status"></div>
+    </section>
+
+    <section>
+      <h2>Log</h2>
+      <div id="log"></div>
+    </section>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

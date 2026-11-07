@@ -37,6 +37,7 @@ lives and how surfaces reach it.
 | `examples/browser` | one process: counter, registry, keys and buttons all in the page |
 | `examples/desktop` | Electron main owns the counter; the renderer forwards over IPC, a CLI forwards over a local socket |
 | `examples/web/api` | an AdonisJS back end owns the counter in SQLite behind its own REST API; the registry sits beside it |
+| `examples/web/app` | the browser half of `web`: a page that talks to the API over `fetch`, with the API's URL in `VITE_API_URL` |
 
 `examples/web/api` has its own toolchain, so it isn't part of the root build.
 First run, from `examples/web/api`:
@@ -47,9 +48,10 @@ node ace generate:key
 node ace migration:run
 ```
 
-Then `npm run web:api` from the root serves it on port 3333. The framework
-generates its route index on first serve; `npm run typecheck -w examples/web/api`
-passes after that.
+Then, from the root, `npm run web:api` serves the API on port 3333 and
+`npm run web:app` serves the page against it. The framework generates its
+route index on first serve; `npm run typecheck -w examples/web/api` passes
+after that.
 
 The examples depend on the packages by name, so they exercise the real
 `exports` maps and the built `dist/`. When editing a package with an example
