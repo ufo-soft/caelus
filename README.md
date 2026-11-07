@@ -51,7 +51,9 @@ node ace migration:run
 Then, from the root, `npm run web:api` serves the API on port 3333 and
 `npm run web:app` serves the page against it. The framework generates its
 route index on first serve; `npm run typecheck -w examples/web/api` passes
-after that.
+after that, and so does `node ace caelus <command>`, the registry's CLI
+running in-process inside the Adonis app. A new controller needs that
+regeneration too before ace commands can load the routes that use it.
 
 The examples depend on the packages by name, so they exercise the real
 `exports` maps and the built `dist/`. When editing a package with an example
