@@ -19,17 +19,16 @@ only installs what it uses.
 
 ```sh
 npm install
-npm test
-npm run check    # type-checks every package
-npm run build
+npm run build    # type-checks and builds every package, in dependency order
+npm test         # builds, then runs every package's tests
 npm run dev      # builds, then serves example/ with Vite
 npm run electron # builds, then opens the same example in an Electron window
 ```
 
 `example/` is a plain browser app that depends on the packages by name, so it
 exercises the real `exports` maps and the built `dist/`. When editing a package
-with the example open, run `npx tsc --watch -p packages/caelus` alongside so
-its `dist/` stays fresh.
+with the example open, run `npx tsc -b --watch` alongside so every `dist/`
+stays fresh.
 
 ## Releasing
 
@@ -40,6 +39,11 @@ npm version patch --workspaces --no-git-tag-version
 git commit -am "v0.1.1" && git tag v0.1.1
 git push --follow-tags
 ```
+
+On a minor or major bump, also update the `@ufo-soft/caelus` range in each
+adapter package's `package.json` (for example `packages/cli`). `npm version`
+bumps the packages but not the ranges between them, and a stale range makes
+npm stop linking the workspace and resolve the old version from the registry.
 
 The tag triggers the release workflow, which publishes every public package
 and creates the GitHub Release.

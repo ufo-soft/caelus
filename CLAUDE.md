@@ -23,6 +23,7 @@ packages/caelus/     @ufo-soft/caelus
   src/core.ts          Registry, Registration, Command, Parameter, Outcome, forward. The narrow waist.
   src/keybindings.ts   canonical, chordOf, parseKeymap, resolve, attach, keybindings. One file by design.
   test/                One test file per module. Fakes are small helpers in the test file.
+packages/cli/        @ufo-soft/caelus-cli: cli, optionOf, argsOf. A registry as a commander CLI.
 example/             A plain browser app, also wrapped in Electron, for developing against the packages.
 docs/                Architecture and the extracted brainstorm transcripts.
 ```
@@ -35,12 +36,12 @@ Keep modules to one file until a file genuinely can't be read in one sitting.
 ## Commands
 
 ```sh
-npm test             # vitest run, every package
-npm run check        # tsc --noEmit, every package
-npm run build        # tsc to each package's dist/
+npm run build        # tsc -b: type-checks and builds every package in dependency order
+npm test             # builds, then vitest run across every package
 ```
 
-Run both the type-check and the tests after any change under `packages/`.
+Packages are TypeScript project references, so a package that imports another resolves it through the
+built `dist/`, the same way a consumer does. Run the tests after any change under `packages/`.
 
 ## Keybindings in one paragraph
 
