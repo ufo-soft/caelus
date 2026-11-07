@@ -26,8 +26,9 @@ if (flag !== -1) {
   app.quit() // a second window would take the socket path from the first
 } else {
   app.whenReady().then(() => {
-    const registry = counter()
+    const { registry, current } = counter()
     ipcMain.handle('caelus:invoke', (_event, name: string, args: Args) => registry.invoke(name, args))
+    ipcMain.handle('caelus:count', current) // a read for display, beside the registry: not an action
     listen(registry)
     new BrowserWindow({
       width: 900,
@@ -39,7 +40,7 @@ if (flag !== -1) {
   app.on('window-all-closed', () => app.quit())
 }
 
-function counter(): Registry {
+function counter(): { registry: Registry; current: () => number } {
   let count = 0
   const registry = new Registry()
   registry.register(
@@ -49,7 +50,7 @@ function counter(): Registry {
       reset: () => ok((count = 0)),
     }),
   )
-  return registry
+  return { registry, current: () => count }
 }
 
 /** One request per connection: the client writes an Invocation and half-closes;
