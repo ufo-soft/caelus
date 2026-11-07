@@ -15,6 +15,8 @@ Follow `.claude/code-style-guide.md`. Short version: build values as expressions
 - **Edit with Edit/Write, never sed or shell rewrites.** Every diff gets reviewed.
 - **Hand-crafted over generated.** This library is deliberately small. Reach for the simplest shape that works and question any abstraction before adding it.
 - **Don't be dismissive.** If a proposal seems wrong, ask what it's for before arguing against a guess.
+- **No assumptions, ever.** If a step depends on something Tim hasn't said, say what the assumption is and get his confirmation before doing it. This includes "obvious" next steps, scaffolding that "will be needed anyway", and filling gaps in a request. Do exactly what was asked, nothing adjacent.
+- **Never think strategically on Tim's behalf.** Don't decide what the project needs next, don't pick the architecture, don't optimize the order of work. When asked for an opinion, give one and stop. When not asked, don't offer one.
 
 ## Layout
 
