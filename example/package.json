@@ -2,13 +2,17 @@
   "name": "caelus-example",
   "private": true,
   "type": "module",
-  "main": "electron.js",
+  "main": "dist/electron.js",
   "scripts": {
     "dev": "vite",
-    "electron": "vite build --base ./ && electron ."
+    "build": "vite build --base ./ && tsc -p tsconfig.electron.json",
+    "electron": "npm run build && electron .",
+    "electron:cli": "electron . --cli",
+    "cli": "node dist/cli.js"
   },
   "dependencies": {
-    "@ufo-soft/caelus": "*"
+    "@ufo-soft/caelus": "*",
+    "@ufo-soft/caelus-cli": "*"
   },
   "devDependencies": {
     "electron": "^45.2.3",
