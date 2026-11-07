@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { Registry, bind, failed, forward, ok } from '../src/core.js'
-import type { Args, Command, Registration } from '../src/core.js'
+import type { Args, Commands, Registration } from '../src/core.js'
 
 /** A registry with "doThingInCoolApp" registered. `received` captures what the
  *  handler actually got, so the happy path is assertable. */
@@ -95,7 +95,7 @@ describe('Registry', () => {
     const commands = {
       up: { description: 'Up', parameters: [] },
       down: { description: 'Down', parameters: [] },
-    } satisfies Record<string, Command>
+    } satisfies Commands
 
     registry.register(bind(commands, { up: () => ok('went up'), down: () => ok('went down') }))
 
@@ -105,7 +105,7 @@ describe('Registry', () => {
   })
 
   it('bind() requires exactly the described keys (checked by tsc, not at runtime)', () => {
-    const commands = { up: { description: 'Up', parameters: [] } } satisfies Record<string, Command>
+    const commands = { up: { description: 'Up', parameters: [] } } satisfies Commands
 
     // @ts-expect-error a described command with no handler
     bind(commands, {})
@@ -115,7 +115,7 @@ describe('Registry', () => {
 
   it('registry.bind() and registry.forward() register what the functions build', async () => {
     const registry = new Registry()
-    const commands = { up: { description: 'Up', parameters: [] } } satisfies Record<string, Command>
+    const commands = { up: { description: 'Up', parameters: [] } } satisfies Commands
 
     registry.bind(commands, { up: () => ok('local') })
     registry.forward({ far: { description: 'Far', parameters: [] } }, async (name) => ok(`sent ${name}`))
