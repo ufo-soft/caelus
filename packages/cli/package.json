@@ -1,0 +1,32 @@
+{
+  "name": "@ufo-soft/caelus-cli",
+  "version": "0.1.0",
+  "description": "Expose a caelus registry as a command-line interface.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ufo-soft/caelus.git",
+    "directory": "packages/cli"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/cli.js",
+  "types": "./dist/cli.d.ts",
+  "exports": {
+    ".": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@ufo-soft/caelus": "^0.1.0",
+    "commander": "^15.0.0"
+  }
+}

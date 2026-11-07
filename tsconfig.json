@@ -1,0 +1,4 @@
+{
+  "files": [],
+  "references": [{ "path": "packages/caelus" }, { "path": "packages/cli" }]
+}
