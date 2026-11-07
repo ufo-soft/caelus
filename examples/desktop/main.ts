@@ -9,7 +9,7 @@ import { commands } from './commands.js'
 // what preload.cts exposes
 declare global {
   interface Window {
-    caelus: { send: Send }
+    caelus: { send: Send; count(): Promise<number> }
   }
 }
 
@@ -97,3 +97,9 @@ $('reload').onclick = async () => {
 }
 
 renderTable()
+
+// The CLI changes the counter from outside this page, and the registry has no change
+// notification by design, so the page polls. Enough for a dev example.
+const refresh = () => window.caelus.count().then(render)
+refresh()
+setInterval(refresh, 500)
