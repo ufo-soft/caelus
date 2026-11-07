@@ -2,12 +2,12 @@ import type { ApplicationService } from '@adonisjs/core/types'
 import { Registry, bind, ok } from '@ufo-soft/caelus'
 
 import CounterService from '#services/counter_service'
-import { commands } from '#start/commands'
+import { commands } from '../registry/descriptions.js'
 
 /**
- * Stands up the command registry as a container singleton, so the invoke route and the
- * ace command share one instance. Handlers call the same CounterService the REST
- * controller calls; neither side knows about the other.
+ * Stands up the command registry: one per process, shared by every request. Handlers call
+ * the same CounterService the REST controller calls; neither side knows about the other.
+ * The invoke route is registered here too, so the app's own routes file stays untouched.
  */
 export default class RegistryProvider {
   constructor(protected app: ApplicationService) {}
@@ -25,5 +25,10 @@ export default class RegistryProvider {
       )
       return registry
     })
+  }
+
+  async start() {
+    const router = await this.app.container.make('router')
+    router.post('/api/v1/invoke', [() => import('#controllers/invoke_controller')])
   }
 }

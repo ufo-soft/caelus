@@ -5,12 +5,12 @@ import { Registry } from '@ufo-soft/caelus'
 import { invocationValidator } from '#validators/invocation'
 
 // The generic endpoint derived from the registry: any command, present or future, by name.
-// Validation is the framework's; the Outcome goes back as it is.
+// Validation is the framework's; a 200 reply is the Outcome as it is.
 @inject()
 export default class InvokeController {
   constructor(private registry: Registry) {}
 
-  async store({ request }: HttpContext) {
+  async handle({ request }: HttpContext) {
     const { name, args } = await request.validateUsing(invocationValidator)
     return this.registry.invoke(name, args ?? {})
   }

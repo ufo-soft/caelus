@@ -17,8 +17,5 @@ router
     router.post('counter/increment', [controllers.Counters, 'increment'])
     router.post('counter/decrement', [controllers.Counters, 'decrement'])
     router.delete('counter', [controllers.Counters, 'destroy'])
-
-    // the registry's generic endpoint, beside the REST API rather than derived from it
-    router.post('invoke', [controllers.Invoke, 'store'])
   })
   .prefix('/api/v1')
