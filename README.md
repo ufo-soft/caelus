@@ -40,5 +40,10 @@ git commit -am "v0.1.1" && git tag v0.1.1
 git push --follow-tags
 ```
 
+On a minor or major bump, also update the `@ufo-soft/caelus` range in each
+adapter package's `package.json` (for example `packages/cli`). `npm version`
+bumps the packages but not the ranges between them, and a stale range makes
+npm stop linking the workspace and resolve the old version from the registry.
+
 The tag triggers the release workflow, which publishes every public package
 and creates the GitHub Release.

@@ -7,13 +7,14 @@
     "example"
   ],
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && tsc -p example",
     "dev": "npm run build && npm run dev -w example",
     "electron": "npm run build && npm run electron -w example",
-    "pretest": "npm run build",
+    "pretest": "npm run build && tsc -p tsconfig.test.json",
     "test": "vitest run"
   },
   "devDependencies": {
+    "@types/node": "^24.19.2",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }

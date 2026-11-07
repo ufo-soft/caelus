@@ -9,7 +9,7 @@ const text: Parameter = { name: 'text', type: 'string', description: 'What to ad
 const count: Parameter = { name: 'count', type: 'integer', description: 'How many' }
 const verbose: Parameter = { name: 'verbose', type: 'boolean', description: 'Say more' }
 
-/** A registry with `add` (all three parameter types) and `fail`. `received` captures what add's handler got. */
+/** A registry with `add` (all three parameter types) and a few one-liners. `received` captures what add's handler got. */
 function registryOf(received: Args[] = []): Registry {
   const registry = new Registry()
   registry.register([
@@ -32,7 +32,12 @@ function registryOf(received: Args[] = []): Registry {
 function io() {
   const out: string[] = []
   const err: string[] = []
-  return { out: (s: string) => void out.push(s), err: (s: string) => void err.push(s), written: () => out.join(''), errors: () => err.join('') }
+  return {
+    out: (s: string) => void out.push(s),
+    err: (s: string) => void err.push(s),
+    written: () => out.join(''),
+    errors: () => err.join(''),
+  }
 }
 
 describe('optionOf', () => {
@@ -54,10 +59,12 @@ describe('optionOf', () => {
     expect(option.parseArg!('-7', undefined)).toBe(-7)
   })
 
-  it('an integer parameter rejects anything but an integer as a usage error', () => {
+  it('an integer parameter rejects anything but a safe integer as a usage error', () => {
     const parse = optionOf(count).parseArg!
 
-    for (const raw of ['abc', '4.2', '', '1e3']) expect(() => parse(raw, undefined)).toThrow(InvalidArgumentError)
+    for (const raw of ['abc', '4.2', '', '1e3', '99999999999999999999']) {
+      expect(() => parse(raw, undefined)).toThrow(InvalidArgumentError)
+    }
   })
 
   it('a boolean parameter is a flag defaulting to false', () => {
@@ -71,15 +78,15 @@ describe('optionOf', () => {
 
 describe('argsOf', () => {
   it('keys parsed option values by parameter name', () => {
-    const opts = { text: 'milk', count: 2, verbose: false }
+    const options = [text, count, verbose].map(optionOf)
 
-    expect(argsOf([text, count, verbose], opts)).toEqual({ text: 'milk', count: 2, verbose: false })
+    expect(argsOf(options, { text: 'milk', count: 2, verbose: false })).toEqual({ text: 'milk', count: 2, verbose: false })
   })
 
   it('reads the camelCased attribute commander produces for a dashed name', () => {
-    const dashed: Parameter = { name: 'dry-run', type: 'boolean', description: '' }
+    const options = [optionOf({ name: 'dry-run', type: 'boolean', description: '' })]
 
-    expect(argsOf([dashed], { dryRun: true })).toEqual({ 'dry-run': true })
+    expect(argsOf(options, { dryRun: true })).toEqual({ 'dry-run': true })
   })
 })
 
@@ -88,18 +95,26 @@ describe('cli', () => {
     const received: Args[] = []
     const t = io()
 
-    const code = await cli(registryOf(received), ['add', '--text', 'milk', '--count', '2'], t)
+    const code = await cli(registryOf(received), ['add', '--text', 'milk', '--count', '2', '--verbose'], 'app', t)
 
     expect(code).toBe(0)
-    expect(received).toEqual([{ text: 'milk', count: 2, verbose: false }])
+    expect(received).toEqual([{ text: 'milk', count: 2, verbose: true }])
     expect(t.written()).toBe('added milk\n')
     expect(t.errors()).toBe('')
+  })
+
+  it('a flag left out is false', async () => {
+    const received: Args[] = []
+
+    await cli(registryOf(received), ['add', '--text', 'milk', '--count', '2'], 'app', io())
+
+    expect(received).toEqual([{ text: 'milk', count: 2, verbose: false }])
   })
 
   it('a failed outcome prints the reason to stderr and exits 1', async () => {
     const t = io()
 
-    expect(await cli(registryOf(), ['fail'], t)).toBe(1)
+    expect(await cli(registryOf(), ['fail'], 'app', t)).toBe(1)
     expect(t.errors()).toContain('nope')
     expect(t.written()).toBe('')
   })
@@ -108,18 +123,18 @@ describe('cli', () => {
     const quiet = io()
     const data = io()
 
-    await cli(registryOf(), ['quiet'], quiet)
-    await cli(registryOf(), ['data'], data)
+    await cli(registryOf(), ['quiet'], 'app', quiet)
+    await cli(registryOf(), ['data'], 'app', data)
 
     expect(quiet.written()).toBe('')
     expect(data.written()).toBe('{"n":1}\n')
   })
 
-  it('a missing mandatory option is a usage error: non-zero, nothing invoked', async () => {
+  it('a missing mandatory option is a usage error: exit 1, nothing invoked', async () => {
     const received: Args[] = []
     const t = io()
 
-    expect(await cli(registryOf(received), ['add', '--count', '2'], t)).not.toBe(0)
+    expect(await cli(registryOf(received), ['add', '--count', '2'], 'app', t)).toBe(1)
     expect(received).toEqual([])
     expect(t.errors()).toContain('--text')
   })
@@ -127,14 +142,15 @@ describe('cli', () => {
   it('a non-integer value is a usage error carrying the parser message', async () => {
     const t = io()
 
-    expect(await cli(registryOf(), ['add', '--text', 'x', '--count', 'two'], t)).not.toBe(0)
+    expect(await cli(registryOf(), ['add', '--text', 'x', '--count', 'two'], 'app', t)).toBe(1)
     expect(t.errors()).toContain('expected an integer')
   })
 
-  it('--help lists every command with its description and exits 0', async () => {
+  it('--help lists every command with its description under the given name, exits 0', async () => {
     const t = io()
 
-    expect(await cli(registryOf(), ['--help'], t)).toBe(0)
+    expect(await cli(registryOf(), ['--help'], 'myapp', t)).toBe(0)
+    expect(t.written()).toContain('Usage: myapp')
     expect(t.written()).toContain('add')
     expect(t.written()).toContain('Add a thing')
     expect(t.written()).toContain('fail')
@@ -143,7 +159,7 @@ describe('cli', () => {
   it('an unknown command is a usage error', async () => {
     const t = io()
 
-    expect(await cli(registryOf(), ['nope'], t)).not.toBe(0)
+    expect(await cli(registryOf(), ['nope'], 'app', t)).toBe(1)
     expect(t.errors()).toContain('nope')
   })
 })

@@ -23,6 +23,7 @@ packages/caelus/     @ufo-soft/caelus
   src/core.ts          Registry, Registration, Command, Parameter, Outcome, forward. The narrow waist.
   src/keybindings.ts   canonical, chordOf, parseKeymap, resolve, attach, keybindings. One file by design.
   test/                One test file per module. Fakes are small helpers in the test file.
+packages/cli/        @ufo-soft/caelus-cli: cli, optionOf, argsOf. A registry as a commander CLI.
 example/             A plain browser app, also wrapped in Electron, for developing against the packages.
 docs/                Architecture and the extracted brainstorm transcripts.
 ```

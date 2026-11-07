@@ -11,9 +11,9 @@ export interface Io {
 
 const stdio: Io = { out: (text) => process.stdout.write(text), err: (text) => process.stderr.write(text) }
 
-/** Exposes the registry as a CLI: one subcommand per command, one option per parameter, all derived.
- *  Resolves to the exit code; the caller decides whether to exit the process. */
-export async function cli(registry: Registry, argv: readonly string[], io: Io = stdio, name = 'app'): Promise<number> {
+/** Exposes the registry as a CLI named `name`: one subcommand per command, one option per parameter,
+ *  all derived. Resolves to the exit code; the caller decides whether to exit the process. */
+export async function cli(registry: Registry, argv: readonly string[], name: string, io: Io = stdio): Promise<number> {
   const root = new Command(name).exitOverride().configureOutput({ writeOut: io.out, writeErr: io.err })
   for (const registration of registry.all()) subcommand(root, registration, registry, io)
   try {
@@ -26,13 +26,14 @@ export async function cli(registry: Registry, argv: readonly string[], io: Io = 
 }
 
 // root.command() rather than addCommand(): only the former copies exitOverride and output config to the child
-function subcommand(root: Command, { name, command }: Registration, registry: Registry, io: Io): void {
-  const sub = root.command(name).description(command.description)
-  for (const parameter of command.parameters) sub.addOption(optionOf(parameter))
+function subcommand(root: Command, { name, command: { description, parameters } }: Registration, registry: Registry, io: Io): void {
+  const options = parameters.map(optionOf)
+  const sub = root.command(name).description(description)
+  for (const option of options) sub.addOption(option)
   sub.action(async (opts: Record<string, unknown>) => {
-    const outcome = await registry.invoke(name, argsOf(command.parameters, opts))
-    if (outcome.kind === FAILED) return sub.error(outcome.reason, { exitCode: 1 })
-    if (outcome.data !== null) io.out(render(outcome.data) + '\n')
+    const outcome = await registry.invoke(name, argsOf(options, opts))
+    if (outcome.kind === FAILED) return sub.error(outcome.reason)
+    if (outcome.data != null) io.out(render(outcome.data) + '\n')
   })
 }
 
@@ -46,12 +47,13 @@ export function optionOf(parameter: Parameter): Option {
   return type === 'integer' ? option.argParser(integer) : option
 }
 
-/** Parsed option values back under their parameter names. Commander camelCases option names; attributeName() is that key. */
-export function argsOf(parameters: readonly Parameter[], opts: Record<string, unknown>): Args {
-  return Object.fromEntries(parameters.map((p) => [p.name, opts[optionOf(p).attributeName()]]))
+/** Parsed values back under their parameter names. An option's name() is the parameter name;
+ *  its attributeName() is the camelCased key commander stores the value under. */
+export function argsOf(options: readonly Option[], opts: Record<string, unknown>): Args {
+  return Object.fromEntries(options.map((option) => [option.name(), opts[option.attributeName()]]))
 }
 
 function integer(raw: string): number {
-  if (!/^-?\d+$/.test(raw)) throw new InvalidArgumentError('expected an integer')
+  if (!/^-?\d+$/.test(raw) || !Number.isSafeInteger(Number(raw))) throw new InvalidArgumentError('expected an integer')
   return Number(raw)
 }
