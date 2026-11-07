@@ -24,10 +24,18 @@ export type Outcome<T = unknown> =
 export const ok = <T = null>(data: T = null as T): Outcome<T> => ({ kind: OK, data })
 export const failed = (reason: string): Outcome<never> => ({ kind: FAILED, reason })
 
+export type Handler = (args: Args) => Outcome | Promise<Outcome>
+
 export interface Registration {
   readonly name: string
   readonly command: Command
-  readonly handler: (args: Args) => Outcome | Promise<Outcome>
+  readonly handler: Handler
+}
+
+/** Registrations from shared descriptions and one handler per key. The handler object must have
+ *  exactly the described keys, so a command without a handler, or the reverse, fails to compile. */
+export function bind<C extends Record<string, Command>>(commands: C, handlers: { [K in keyof C]: Handler }): Registration[] {
+  return Object.entries(commands).map(([name, command]) => ({ name, command, handler: handlers[name] }))
 }
 
 /** Registrations for commands whose work happens in another process: every handler sends its name and args
