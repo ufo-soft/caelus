@@ -11,6 +11,9 @@ export interface Command {
   readonly parameters: readonly Parameter[]
 }
 
+/** Descriptions keyed by name: what an app declares once and every process binds handlers to. */
+export type Commands = Readonly<Record<string, Command>>
+
 export type Args = Readonly<Record<string, unknown>>
 
 export const OK = 'ok'
@@ -34,7 +37,7 @@ export interface Registration {
 
 /** Registrations from shared descriptions and one handler per key. The handler object must have
  *  exactly the described keys, so a command without a handler, or the reverse, fails to compile. */
-export function bind<C extends Record<string, Command>>(commands: C, handlers: { [K in keyof C]: Handler }): Registration[] {
+export function bind<C extends Commands>(commands: C, handlers: { [K in keyof C]: Handler }): Registration[] {
   return Object.entries(commands).map(([name, command]) => ({ name, command, handler: handlers[name] }))
 }
 
@@ -43,7 +46,7 @@ export type Send = (name: string, args: Args) => Promise<Outcome>
 
 /** Registrations for commands whose work happens in another process: every handler sends its name and args
  *  through `send` and returns whatever comes back. */
-export function forward(commands: Readonly<Record<string, Command>>, send: Send): Registration[] {
+export function forward(commands: Commands, send: Send): Registration[] {
   return Object.entries(commands).map(([name, command]) => ({ name, command, handler: (args) => send(name, args) }))
 }
 
@@ -55,12 +58,12 @@ export class Registry {
   }
 
   /** register(bind(commands, handlers)) */
-  bind<C extends Record<string, Command>>(commands: C, handlers: { [K in keyof C]: Handler }): void {
+  bind<C extends Commands>(commands: C, handlers: { [K in keyof C]: Handler }): void {
     this.register(bind(commands, handlers))
   }
 
   /** register(forward(commands, send)) */
-  forward(commands: Readonly<Record<string, Command>>, send: Send): void {
+  forward(commands: Commands, send: Send): void {
     this.register(forward(commands, send))
   }
 
