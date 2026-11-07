@@ -6,6 +6,9 @@
     "dev": "vite",
     "build": "vite build"
   },
+  "dependencies": {
+    "@ufo-soft/caelus": "*"
+  },
   "devDependencies": {
     "vite": "^7.1.0"
   }
