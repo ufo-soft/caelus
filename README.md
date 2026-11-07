@@ -46,8 +46,8 @@ To drive `desktop` from a terminal the way an installed app would be,
 `examples/desktop/scripts/build.sh` builds it and installs two launchers in
 `~/.local/bin`: `caelus-desktop` opens the window (or, with `--cli`, runs the
 CLI through the Electron binary) and `caelus-desktop-cli` runs the CLI through
-plain Node. `examples/desktop/scripts/cli.sh demo` exercises both against the
-running window.
+plain Node. `examples/desktop/scripts/cli.sh demo` exercises both; they share
+the SQLite file with the window, so they work with or without one running.
 
 `examples/web/api` has its own toolchain, so it isn't part of the root build.
 First run, from `examples/web/api`:

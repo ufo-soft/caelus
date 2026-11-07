@@ -1,12 +1,11 @@
 #!/bin/sh
-# Drive the desktop example's CLI surfaces against the running window.
+# Drive the desktop example's CLI surfaces. Both entries open the same SQLite file the
+# window uses, so they work whether or not a window is running; a running window shows
+# the change on its next poll.
 #
 # Usage:
 #   scripts/cli.sh <command> [--options]   # one command, through the Node entry
-#   scripts/cli.sh demo                     # both entries against the same window
-#
-# The window must be running (caelus-desktop); without it every command fails
-# with "no running instance to send to" and exit 1, which the demo shows too.
+#   scripts/cli.sh demo                     # both entries against the same counter
 
 NODE_ENTRY="$HOME/.local/bin/caelus-desktop-cli"
 ELECTRON_ENTRY="$HOME/.local/bin/caelus-desktop"
