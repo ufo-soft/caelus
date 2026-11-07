@@ -108,4 +108,3 @@ $('reload').onclick = async () => {
 }
 
 renderTable()
-render(count)

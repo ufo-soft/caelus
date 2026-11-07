@@ -14,14 +14,14 @@ import { commands } from './commands.js'
 export const SOCKET = join(tmpdir(), 'caelus-example.sock')
 
 /** The one thing that crosses the socket: exactly what invoke() takes. The reply is an Outcome. */
-export interface Request {
+export interface Invocation {
   readonly name: string
   readonly args: Args
 }
 
 export const send: Send = async (name, args) => {
-  const request: Request = { name, args }
-  const connection = connect(SOCKET).end(JSON.stringify(request))
+  const invocation: Invocation = { name, args }
+  const connection = connect(SOCKET).end(JSON.stringify(invocation))
   try {
     return JSON.parse(await text(connection))
   } catch {

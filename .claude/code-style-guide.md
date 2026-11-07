@@ -52,7 +52,7 @@ The pure core (parsing, merging, resolving, dispatch) imports nothing and touche
 export function canonical(input: string): string
 
 // The edge: takes its target so a test can hand it a fake
-export function attach(table: () => Map<string, string>, registry: Registry, target: KeyTarget = window)
+export function attach(table: () => Table, registry: Registry, target: KeyTarget = window)
 ```
 
 This is why the module stays usable server-side: a chord arriving over a socket goes through the same `canonical` and `resolve` as one from a keydown. If a function can't run in a plain node test, it is an edge function, and the pure part inside it should be extracted.
@@ -99,13 +99,14 @@ Use types to make a wrong *program* fail to compile, not to re-describe what the
 
 Prefer a two-case or discriminated union over a bag of optional fields. Avoid `any`; take `unknown` and narrow.
 
-**Name a structural type when it means a concept and appears in a public signature more than once.**
-`ReadonlyMap<string, string>` says what a value is made of; `Table` says what it is for, and lets
-`reload(): Promise<Outcome<Table>>` read as a sentence. Two shapes that are structurally identical but
-mean different things (`Keymap` before resolution, `Table` after; `Args` by parameter name, `Parsed` by
-commander's attribute name) get two names, because the name is the only thing that keeps them apart.
-A one-off internal stays inline; an alias nobody reads twice is noise. Export any alias that appears in
-an exported signature, or the `.d.ts` shows the consumer the expansion instead of the name.
+**Name a structural type that carries a concept when either holds:** it appears in more than one
+exported signature, or it has the same contents as another named type but a different meaning. In both
+cases the name has to say something the expansion doesn't: `Table` says what `ReadonlyMap<string, string>`
+is for, and lets `reload(): Promise<Outcome<Table>>` read as a sentence, while `type Detach = () => void`
+says nothing `() => void` didn't. Same-contents pairs (`Args` keyed by parameter name, `OptionValues`
+keyed by commander's attribute name) get two names because the name is the only thing keeping them
+apart. A one-off internal stays inline. Export any alias that appears in an exported signature, or the
+`.d.ts` names a type the consumer can't import.
 
 ---
 
