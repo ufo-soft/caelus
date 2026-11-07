@@ -19,16 +19,27 @@ only installs what it uses.
 
 ```sh
 npm install
-npm run build    # type-checks and builds every package, in dependency order
+npm run build    # type-checks and builds every package and example, in dependency order
 npm test         # builds, then runs every package's tests
-npm run dev      # builds, then serves example/ with Vite
-npm run electron # builds, then opens the same example in an Electron window
+npm run browser  # builds, then serves examples/browser with Vite
+npm run desktop  # builds, then opens examples/desktop in an Electron window
 ```
 
-`example/` is a plain browser app that depends on the packages by name, so it
-exercises the real `exports` maps and the built `dist/`. When editing a package
-with the example open, run `npx tsc -b --watch` alongside so every `dist/`
-stays fresh.
+## Examples
+
+Each example is the same app, a counter with three commands, built as a
+different architecture. They deliberately share no code: what stays constant
+is the behavior, so the only variable between them is where the registry
+lives and how surfaces reach it.
+
+| example | shape |
+|---|---|
+| `examples/browser` | one process: counter, registry, keys and buttons all in the page |
+| `examples/desktop` | Electron main owns the counter; the renderer forwards over IPC, a CLI forwards over a local socket |
+
+The examples depend on the packages by name, so they exercise the real
+`exports` maps and the built `dist/`. When editing a package with an example
+open, run `npx tsc -b --watch` alongside so every `dist/` stays fresh.
 
 ## Releasing
 
