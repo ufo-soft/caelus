@@ -35,9 +35,13 @@ export interface Registration {
   readonly handler: Handler
 }
 
-/** Registrations from shared descriptions and one handler per key. The handler object must have
- *  exactly the described keys, so a command without a handler, or the reverse, fails to compile. */
-export function bind<C extends Commands>(commands: C, handlers: { [K in keyof C]: Handler }): Registration[] {
+/** One handler per described key, none optional. Descriptions typed as a plain Commands (`string` keys)
+ *  can't be checked, so they're rejected outright: declare them with `satisfies Commands` instead. */
+export type Handlers<C extends Commands> = string extends keyof C ? never : { [K in keyof C]-?: Handler }
+
+/** Registrations from shared descriptions and one handler per key. A described command without a
+ *  handler fails to compile; a handler written inline for an undescribed command does too. */
+export function bind<C extends Commands>(commands: C, handlers: Handlers<C>): Registration[] {
   return Object.entries(commands).map(([name, command]) => ({ name, command, handler: handlers[name] }))
 }
 
@@ -55,16 +59,6 @@ export class Registry {
 
   register(registrations: Registration | readonly Registration[]): void {
     for (const r of [registrations].flat()) this.#registrations.set(r.name, r)
-  }
-
-  /** register(bind(commands, handlers)) */
-  bind<C extends Commands>(commands: C, handlers: { [K in keyof C]: Handler }): void {
-    this.register(bind(commands, handlers))
-  }
-
-  /** register(forward(commands, send)) */
-  forward(commands: Commands, send: Send): void {
-    this.register(forward(commands, send))
   }
 
   retrieve(name: string): Registration | undefined {
