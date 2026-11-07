@@ -1,5 +1,5 @@
-import { OK, Registry, forward, ok } from '@ufo-soft/caelus'
-import type { Args, Outcome } from '@ufo-soft/caelus'
+import { OK, Registry, bind, forward, ok } from '@ufo-soft/caelus'
+import type { Send } from '@ufo-soft/caelus'
 import { keybindings } from '@ufo-soft/caelus/keybindings'
 
 import { commands } from './commands.js'
@@ -7,7 +7,7 @@ import { commands } from './commands.js'
 // what preload.cts exposes under Electron; absent in a plain browser
 declare global {
   interface Window {
-    caelus?: { send(name: string, args: Args): Promise<Outcome> }
+    caelus?: { send: Send }
   }
 }
 
@@ -28,14 +28,17 @@ const log = (line: string) => {
 const registry = new Registry()
 
 // Counter commands are forwarded: to Electron main when its preload is present,
-// otherwise to an in-process counter so the page works in a plain browser.
+// otherwise to an in-process registry so the page works in a plain browser.
 let count = 0
-const local: Record<string, () => Outcome> = {
-  increment: () => ok(++count),
-  decrement: () => ok(--count),
-  reset: () => ok((count = 0)),
-}
-const run = window.caelus?.send ?? (async (name: string) => local[name]())
+const local = new Registry()
+local.register(
+  bind(commands, {
+    increment: () => ok(++count),
+    decrement: () => ok(--count),
+    reset: () => ok((count = 0)),
+  }),
+)
+const run: Send = window.caelus?.send ?? ((name, args) => local.invoke(name, args))
 
 registry.register(
   forward(commands, async (name, args) => {
@@ -105,4 +108,3 @@ $('reload').onclick = async () => {
 }
 
 renderTable()
-render(count)

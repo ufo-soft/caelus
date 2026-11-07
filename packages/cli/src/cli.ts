@@ -11,6 +11,9 @@ export interface Io {
 
 const stdio: Io = { out: (text) => process.stdout.write(text), err: (text) => process.stderr.write(text) }
 
+/** What commander hands an action: values keyed by camelCased option name, not by parameter name. */
+export type OptionValues = Record<string, unknown>
+
 /** Exposes the registry as a CLI named `name`: one subcommand per command, one option per parameter,
  *  all derived. Resolves to the exit code; the caller decides whether to exit the process. */
 export async function cli(registry: Registry, argv: readonly string[], name: string, io: Io = stdio): Promise<number> {
@@ -30,7 +33,7 @@ function subcommand(root: Command, { name, command: { description, parameters } 
   const options = parameters.map(optionOf)
   const sub = root.command(name).description(description)
   for (const option of options) sub.addOption(option)
-  sub.action(async (opts: Record<string, unknown>) => {
+  sub.action(async (opts: OptionValues) => {
     const outcome = await registry.invoke(name, argsOf(options, opts))
     if (outcome.kind === FAILED) return sub.error(outcome.reason)
     if (outcome.data != null) io.out(render(outcome.data) + '\n')
@@ -49,7 +52,7 @@ export function optionOf(parameter: Parameter): Option {
 
 /** Parsed values back under their parameter names. An option's name() is the parameter name;
  *  its attributeName() is the camelCased key commander stores the value under. */
-export function argsOf(options: readonly Option[], opts: Record<string, unknown>): Args {
+export function argsOf(options: readonly Option[], opts: OptionValues): Args {
   return Object.fromEntries(options.map((option) => [option.name(), opts[option.attributeName()]]))
 }
 

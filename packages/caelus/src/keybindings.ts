@@ -2,7 +2,11 @@ import { parse } from 'smol-toml'
 
 import { FAILED, Registry, Outcome, ok, failed } from './core.js'
 
-type Keymap = Record<string, string>
+/** A config layer: chord to command name. Defaults and the user patch are both one of these. */
+export type Keymap = Record<string, string>
+
+/** Canonical chord to command name, after merging the layers and dropping unbinds and unknown commands. */
+export type Table = ReadonlyMap<string, string>
 
 /** The tombstone value: binding a chord to this removes it from the resolved table. */
 export const UNBIND = 'unbind'
@@ -10,8 +14,8 @@ export const UNBIND = 'unbind'
 /** Reads the [bindings] table of a TOML keymap. No table is an empty patch; a malformed document is a failure. */
 export function parseKeymap(text: string): Outcome<Keymap> {
   try {
-    const table = parse(text).bindings
-    const entries = typeof table !== 'object' || Array.isArray(table) ? [] : Object.entries(table)
+    const bindings = parse(text).bindings
+    const entries = typeof bindings !== 'object' || Array.isArray(bindings) ? [] : Object.entries(bindings)
     return ok(Object.fromEntries(entries.filter(([, value]) => typeof value === 'string')))
   } catch (e) {
     return failed(e instanceof Error ? e.message : String(e))
@@ -78,7 +82,7 @@ function chord(mods: readonly string[], key: string): string {
 }
 
 /** Merge patch over defaults per canonical chord. UNBIND and unknown commands remove the chord. */
-export function resolve(defaults: Keymap, patch: Keymap, registry: Registry): Map<string, string> {
+export function resolve(defaults: Keymap, patch: Keymap, registry: Registry): Table {
   const merged = { ...canonicalized(defaults), ...canonicalized(patch) }
   const bound = Object.entries(merged).filter(([, name]) => name !== UNBIND && registry.retrieve(name))
   return new Map(bound)
@@ -90,10 +94,11 @@ function canonicalized(layer: Keymap): Keymap {
   return Object.fromEntries(entries.filter(([key]) => key))
 }
 
-type KeyTarget = Pick<EventTarget, 'addEventListener' | 'removeEventListener'>
+/** What attach() adds its keydown listener to: anything with add/removeEventListener. */
+export type KeyTarget = Pick<EventTarget, 'addEventListener' | 'removeEventListener'>
 
 /** One keydown listener; reads the table through a thunk so a reload is just a swap. Returns the detach. */
-export function attach(table: () => ReadonlyMap<string, string>, registry: Registry, target: KeyTarget = window) {
+export function attach(table: () => Table, registry: Registry, target: KeyTarget = window) {
   const listener = (e: Event) => {
     const name = table().get(chordOf(e as KeyboardEvent))
     if (name) {
@@ -110,11 +115,11 @@ export type Source = () => string | Promise<string>
 
 export interface Keybindings {
   /** The current resolved table. Replaced wholesale on a successful reload, never mutated. */
-  readonly table: ReadonlyMap<string, string>
+  readonly table: Table
   /** Adds the keydown listener; returns the detach. */
   attach(target?: KeyTarget): () => void
   /** Re-reads the source and swaps the table. On failure the previous table stays and the reason is returned. */
-  reload(): Promise<Outcome<ReadonlyMap<string, string>>>
+  reload(): Promise<Outcome<Table>>
 }
 
 /** Wires defaults, an optional user source, and the registry into one reloadable handle.
@@ -123,7 +128,7 @@ export function keybindings(registry: Registry, defaults: Keymap, source?: Sourc
   let table = resolve(defaults, {}, registry)
   let latest = 0
 
-  const reload = async (): Promise<Outcome<ReadonlyMap<string, string>>> => {
+  const reload = async (): Promise<Outcome<Table>> => {
     const request = ++latest
     const patch = await read(source)
     if (patch.kind === FAILED) return patch

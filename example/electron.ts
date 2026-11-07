@@ -9,6 +9,7 @@ import { Registry, bind, failed, ok } from '@ufo-soft/caelus'
 import type { Args, Outcome } from '@ufo-soft/caelus'
 
 import { SOCKET, runCli } from './client.js'
+import type { Invocation } from './client.js'
 import { commands } from './commands.js'
 
 // `electron . --cli <args>`: no window, no registry of its own. This process is a client of
@@ -51,7 +52,7 @@ function counter(): Registry {
   return registry
 }
 
-/** One request per connection: the client writes { name, args } and half-closes;
+/** One request per connection: the client writes an Invocation and half-closes;
  *  the Outcome comes back as JSON and the connection ends. */
 function listen(registry: Registry): void {
   rmSync(SOCKET, { force: true }) // nothing closes the server on quit, so the file outlives every run
@@ -79,10 +80,11 @@ async function answer(registry: Registry, request: string): Promise<Outcome> {
   }
 }
 
-function parse(request: string): { name: string; args: Args } | undefined {
+function parse(request: string): Invocation | undefined {
   try {
     const { name, args } = JSON.parse(request)
-    return typeof name === 'string' ? { name, args: args ?? {} } : undefined
+    if (typeof name !== 'string') return undefined
+    return { name, args: typeof args === 'object' && args !== null ? args : {} }
   } catch {
     return undefined
   }
