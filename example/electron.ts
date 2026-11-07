@@ -4,11 +4,10 @@
 import { BrowserWindow, app, ipcMain } from 'electron'
 import { rmSync } from 'node:fs'
 import { createServer } from 'node:net'
-import { Registry, forward, ok } from '@ufo-soft/caelus'
+import { Registry, ok } from '@ufo-soft/caelus'
 import type { Args } from '@ufo-soft/caelus'
-import { cli } from '@ufo-soft/caelus-cli'
 
-import { SOCKET, send } from './client.js'
+import { SOCKET, runCli } from './client.js'
 import { commands } from './commands.js'
 
 let count = 0
@@ -43,9 +42,7 @@ const flag = process.argv.indexOf('--cli')
 
 if (flag !== -1) {
   app.dock?.hide()
-  const client = new Registry()
-  client.register(forward(commands, send))
-  cli(client, process.argv.slice(flag + 1), undefined, 'caelus-example').then((code) => app.exit(code))
+  runCli(process.argv.slice(flag + 1)).then((code) => app.exit(code))
 } else {
   app.whenReady().then(() => {
     listen()
