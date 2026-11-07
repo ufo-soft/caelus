@@ -53,6 +53,7 @@ examples/            One app per architecture, the same counter in each, sharing
                        it, not inside it; if removing the registry leaves a normal Adonis app, it's right.
   web/app/             The page for web: the registry's forwarders dispatch into a REST client, VITE_API_URL says where.
                        The api, page and bin share api/registry/descriptions.ts, as desktop's processes share theirs.
+  web/cli/             A standalone `counter` bin: forwarders over HTTP to the API's invoke route.
 docs/                Architecture and the extracted brainstorm transcripts.
 ```
 

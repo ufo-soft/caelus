@@ -1,0 +1,15 @@
+{
+  "name": "caelus-example-web-cli",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "counter": "./dist/cli/cli.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@ufo-soft/caelus": "*",
+    "@ufo-soft/caelus-cli": "*"
+  }
+}
