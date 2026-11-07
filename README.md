@@ -40,6 +40,7 @@ api, page and bin share `api/registry/descriptions.ts` the same way.
 | `examples/desktop` | Electron main owns the counter; the renderer forwards over IPC, a CLI forwards over a local socket |
 | `examples/web/api` | an AdonisJS back end owns the counter in SQLite behind its own REST API; the registry sits beside it |
 | `examples/web/app` | the browser half of `web`: the same page as the others, whose forwarders dispatch into a hand-written REST client; the API's URL is in `VITE_API_URL` |
+| `examples/web/cli` | a standalone `counter` binary: the same descriptions, forwarded to the API's invoke route over HTTP; `COUNTER_API` says where |
 
 `examples/web/api` has its own toolchain, so it isn't part of the root build.
 First run, from `examples/web/api`:
@@ -51,7 +52,9 @@ node ace migration:run
 ```
 
 Then, from the root, `npm run web:api` serves the API on port 3333 and
-`npm run web:app` serves the page against it. The framework generates its
+`npm run web:app` serves the page against it. `npx counter increment` runs
+the standalone CLI against the same API once `npm run build` has produced
+it. The framework generates its
 route index on first serve; `npm run typecheck -w examples/web/api` passes
 after that, and so does `node ace caelus -- <command>`, the registry's CLI
 running in-process inside the Adonis app. Everything after `--` reaches the

@@ -8,7 +8,7 @@
     "examples/web/*"
   ],
   "scripts": {
-    "build": "tsc -b && tsc -p examples/browser && tsc -p examples/desktop && tsc -p examples/web/app",
+    "build": "tsc -b && tsc -p examples/browser && tsc -p examples/desktop && tsc -p examples/web/app && tsc -p examples/web/cli",
     "browser": "npm run build && npm run dev -w examples/browser",
     "desktop": "npm run build && npm run electron -w examples/desktop",
     "web:api": "npm run dev -w examples/web/api",
