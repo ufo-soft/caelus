@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { Registry, failed, forward, ok } from '../src/core.js'
-import type { Args, Registration } from '../src/core.js'
+import { Registry, bind, failed, forward, ok } from '../src/core.js'
+import type { Args, Command, Commands, Registration } from '../src/core.js'
 
 /** A registry with "doThingInCoolApp" registered. `received` captures what the
  *  handler actually got, so the happy path is assertable. */
@@ -88,6 +88,37 @@ describe('Registry', () => {
     registry.register(names.map(trivial))
 
     expect(registry.all().map((r) => r.name)).toEqual(names)
+  })
+
+  it('bind() pairs each description with the handler under the same key', async () => {
+    const registry = new Registry()
+    const commands = {
+      up: { description: 'Up', parameters: [] },
+      down: { description: 'Down', parameters: [] },
+    } satisfies Commands
+
+    registry.register(bind(commands, { up: () => ok('went up'), down: () => ok('went down') }))
+
+    expect(registry.all().map((r) => [r.name, r.command.description])).toEqual([['up', 'Up'], ['down', 'Down']])
+    expect(await registry.invoke('up', {})).toEqual(ok('went up'))
+    expect(await registry.invoke('down', {})).toEqual(ok('went down'))
+  })
+
+  it('bind() requires exactly the described keys (checked by tsc, not at runtime)', () => {
+    const commands = { up: { description: 'Up', parameters: [] } } satisfies Commands
+
+    // @ts-expect-error a described command with no handler
+    bind(commands, {})
+    // @ts-expect-error a handler for a command that is not described
+    bind(commands, { up: () => ok(), sideways: () => ok() })
+
+    const optional: { up: Command; down?: Command } = commands
+    // @ts-expect-error an optional description still needs its handler
+    bind(optional, { up: () => ok() })
+
+    const widened: Commands = commands
+    // @ts-expect-error descriptions typed as plain Commands can't be checked, so they're refused
+    bind(widened, {})
   })
 
   it('forward() registrations carry the description and send name and args through', async () => {

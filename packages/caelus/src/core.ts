@@ -11,6 +11,9 @@ export interface Command {
   readonly parameters: readonly Parameter[]
 }
 
+/** Descriptions keyed by name: what an app declares once and every process binds handlers to. */
+export type Commands = Readonly<Record<string, Command>>
+
 export type Args = Readonly<Record<string, unknown>>
 
 export const OK = 'ok'
@@ -24,18 +27,30 @@ export type Outcome<T = unknown> =
 export const ok = <T = null>(data: T = null as T): Outcome<T> => ({ kind: OK, data })
 export const failed = (reason: string): Outcome<never> => ({ kind: FAILED, reason })
 
+export type Handler = (args: Args) => Outcome | Promise<Outcome>
+
 export interface Registration {
   readonly name: string
   readonly command: Command
-  readonly handler: (args: Args) => Outcome | Promise<Outcome>
+  readonly handler: Handler
 }
 
+/** One handler per described key, none optional. Descriptions typed as a plain Commands (`string` keys)
+ *  can't be checked, so they're rejected outright: declare them with `satisfies Commands` instead. */
+export type Handlers<C extends Commands> = string extends keyof C ? never : { [K in keyof C]-?: Handler }
+
+/** Registrations from shared descriptions and one handler per key. A described command without a
+ *  handler fails to compile; a handler written inline for an undescribed command does too. */
+export function bind<C extends Commands>(commands: C, handlers: Handlers<C>): Registration[] {
+  return Object.entries(commands).map(([name, command]) => ({ name, command, handler: handlers[name] }))
+}
+
+/** Carries an invoke to a registry in another process. The app supplies it: fetch, a socket, IPC. */
+export type Send = (name: string, args: Args) => Promise<Outcome>
+
 /** Registrations for commands whose work happens in another process: every handler sends its name and args
- *  through `send` and returns whatever comes back. The app supplies `send`: fetch, a socket, IPC. */
-export function forward(
-  commands: Readonly<Record<string, Command>>,
-  send: (name: string, args: Args) => Promise<Outcome>,
-): Registration[] {
+ *  through `send` and returns whatever comes back. */
+export function forward(commands: Commands, send: Send): Registration[] {
   return Object.entries(commands).map(([name, command]) => ({ name, command, handler: (args) => send(name, args) }))
 }
 
