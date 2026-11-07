@@ -4,12 +4,12 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "example"
+    "examples/*"
   ],
   "scripts": {
-    "build": "tsc -b && tsc -p example",
-    "dev": "npm run build && npm run dev -w example",
-    "electron": "npm run build && npm run electron -w example",
+    "build": "tsc -b && tsc -p examples/browser && tsc -p examples/desktop",
+    "browser": "npm run build && npm run dev -w examples/browser",
+    "desktop": "npm run build && npm run electron -w examples/desktop",
     "pretest": "npm run build && tsc -p tsconfig.test.json",
     "test": "vitest run"
   },

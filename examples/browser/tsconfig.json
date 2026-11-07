@@ -7,5 +7,5 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["*.ts"]
+  "files": ["main.ts", "commands.ts"]
 }

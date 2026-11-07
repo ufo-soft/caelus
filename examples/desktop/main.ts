@@ -1,13 +1,15 @@
-import { OK, Registry, bind, forward, ok } from '@ufo-soft/caelus'
+// The renderer. The counter lives in Electron main; every counter command here is a
+// forwarder over the preload bridge. clearLog is the one command that lives in the page.
+import { OK, Registry, forward, ok } from '@ufo-soft/caelus'
 import type { Send } from '@ufo-soft/caelus'
 import { keybindings } from '@ufo-soft/caelus/keybindings'
 
 import { commands } from './commands.js'
 
-// what preload.cts exposes under Electron; absent in a plain browser
+// what preload.cts exposes
 declare global {
   interface Window {
-    caelus?: { send: Send }
+    caelus: { send: Send }
   }
 }
 
@@ -27,22 +29,9 @@ const log = (line: string) => {
 
 const registry = new Registry()
 
-// Counter commands are forwarded: to Electron main when its preload is present,
-// otherwise to an in-process registry so the page works in a plain browser.
-let count = 0
-const local = new Registry()
-local.register(
-  bind(commands, {
-    increment: () => ok(++count),
-    decrement: () => ok(--count),
-    reset: () => ok((count = 0)),
-  }),
-)
-const run: Send = window.caelus?.send ?? ((name, args) => local.invoke(name, args))
-
 registry.register(
   forward(commands, async (name, args) => {
-    const outcome = await run(name, args)
+    const outcome = await window.caelus.send(name, args)
     log(name)
     if (outcome.kind === OK) render(outcome.data)
     return outcome
@@ -102,7 +91,7 @@ const renderTable = () => {
 $('reload').onclick = async () => {
   const outcome = await kb.reload()
   const status = $('status')
-  status.textContent = outcome.kind === 'ok' ? 'reloaded' : outcome.reason
+  status.textContent = outcome.kind === OK ? 'reloaded' : outcome.reason
   status.className = outcome.kind
   renderTable()
 }
