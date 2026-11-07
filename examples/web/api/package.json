@@ -59,6 +59,8 @@
     "@adonisjs/core": "^7.5.2",
     "@adonisjs/cors": "^3.0.0",
     "@adonisjs/lucid": "^22.4.2",
+    "@ufo-soft/caelus": "*",
+    "@ufo-soft/caelus-cli": "*",
     "@japa/api-client": "^3.2.1",
     "@tuyau/core": "^1.2.2",
     "@vinejs/vine": "^4.4.0",
