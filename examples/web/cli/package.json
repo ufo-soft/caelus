@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "bin": {
-    "counter": "./dist/cli/cli.js"
+    "counter": "./bin/counter.js"
   },
   "scripts": {
     "build": "tsc"

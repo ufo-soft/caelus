@@ -1,12 +1,12 @@
-#!/usr/bin/env node
 // A standalone CLI for the web app: a separate process, installed anywhere, that holds the
 // same descriptions the server binds and forwards every command to the API's invoke route.
-// Packaged as a bin; bundling it into one file is a build step, not a code change.
+// The descriptions are compiled in from the API's source, which is why that file may import
+// nothing at runtime.
 import { Registry, failed, forward } from '@ufo-soft/caelus'
 import type { Send } from '@ufo-soft/caelus'
 import { cli } from '@ufo-soft/caelus-cli'
 
-import { commands } from '../api/start/commands.js'
+import { commands } from '../api/registry/descriptions.js'
 
 const base = process.env.COUNTER_API ?? 'http://localhost:3333/api/v1'
 
@@ -19,7 +19,7 @@ const send: Send = async (name, args) => {
     })
     return response.ok ? await response.json() : failed(`${response.status} from ${base}/invoke`)
   } catch (error) {
-    return failed(`cannot reach ${base}: ${error instanceof Error ? error.message : String(error)}`)
+    return failed(`${base}/invoke: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 

@@ -53,8 +53,8 @@ node ace migration:run
 
 Then, from the root, `npm run web:api` serves the API on port 3333 and
 `npm run web:app` serves the page against it. `npx counter increment` runs
-the standalone CLI against the same API; npm links that bin at install time,
-so on a fresh clone run `npm run build` and then `npm install` once more. The framework generates its
+the standalone CLI against the same API once `npm run build` has produced
+it. The framework generates its
 route index on first serve; `npm run typecheck -w examples/web/api` passes
 after that, and so does `node ace caelus -- <command>`, the registry's CLI
 running in-process inside the Adonis app. Everything after `--` reaches the
