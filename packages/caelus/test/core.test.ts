@@ -99,7 +99,10 @@ describe('Registry', () => {
 
     registry.register(bind(commands, { up: () => ok('went up'), down: () => ok('went down') }))
 
-    expect(registry.all().map((r) => [r.name, r.command.description])).toEqual([['up', 'Up'], ['down', 'Down']])
+    expect(registry.all().map((r) => [r.name, r.command.description])).toEqual([
+      ['up', 'Up'],
+      ['down', 'Down'],
+    ])
     expect(await registry.invoke('up', {})).toEqual(ok('went up'))
     expect(await registry.invoke('down', {})).toEqual(ok('went down'))
   })

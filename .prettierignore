@@ -1,0 +1,9 @@
+# code only: prose and markup stay as written, and npm owns package.json's layout
+dist/
+node_modules/
+examples/web/api/
+.adonisjs/
+package-lock.json
+package.json
+*.md
+*.html

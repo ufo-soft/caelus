@@ -80,7 +80,11 @@ describe('argsOf', () => {
   it('keys parsed option values by parameter name', () => {
     const options = [text, count, verbose].map(optionOf)
 
-    expect(argsOf(options, { text: 'milk', count: 2, verbose: false })).toEqual({ text: 'milk', count: 2, verbose: false })
+    expect(argsOf(options, { text: 'milk', count: 2, verbose: false })).toEqual({
+      text: 'milk',
+      count: 2,
+      verbose: false,
+    })
   })
 
   it('reads the camelCased attribute commander produces for a dashed name', () => {
