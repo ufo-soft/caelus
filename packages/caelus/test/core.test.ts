@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Registry, bind, failed, forward, ok } from '../src/core.js'
+import { Registry, bind, failed, forward, ok, render } from '../src/core.js'
 import type { Args, Command, Commands, Registration } from '../src/core.js'
 
 /** A registry with "doThingInCoolApp" registered. `received` captures what the
@@ -137,6 +137,14 @@ describe('Registry', () => {
     expect(registry.retrieve('add')?.command.description).toBe('Add')
     expect(await registry.invoke('add', { text: 'milk' })).toEqual(ok('from afar'))
     expect(sent).toEqual([['add', { text: 'milk' }]])
+  })
+
+  it('render() is a string as-is, other data as JSON, no data as nothing', () => {
+    expect(render('added milk')).toBe('added milk')
+    expect(render({ n: 1 })).toBe('{"n":1}')
+    expect(render(3)).toBe('3')
+    expect(render(null)).toBe('')
+    expect(render(undefined)).toBe('')
   })
 
   it('retrieve() returns a registration, or undefined when absent', () => {
