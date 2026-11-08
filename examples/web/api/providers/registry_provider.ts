@@ -7,7 +7,7 @@ import { commands } from '../registry/descriptions.js'
 /**
  * Stands up the command registry: one per process, shared by every request. Handlers call
  * the same CounterService the REST controller calls; neither side knows about the other.
- * The invoke route is registered here too, so the app's own routes file stays untouched.
+ * The invoke and MCP routes are registered here too, so the app's own routes file stays untouched.
  */
 export default class RegistryProvider {
   constructor(protected app: ApplicationService) {}
@@ -30,5 +30,8 @@ export default class RegistryProvider {
   async start() {
     const router = await this.app.container.make('router')
     router.post('/api/v1/invoke', [() => import('#controllers/invoke_controller')])
+    router.post('/api/v1/mcp', [() => import('#controllers/mcp_controller')])
+    // stateless, so no stream to open and no session to delete: a 405 is what SDK clients expect to stay quiet
+    router.route('/api/v1/mcp', ['GET', 'DELETE'], ({ response }) => response.status(405).header('allow', 'POST').send(''))
   }
 }

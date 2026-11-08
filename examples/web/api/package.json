@@ -59,14 +59,17 @@
     "@adonisjs/core": "^7.5.2",
     "@adonisjs/cors": "^3.0.0",
     "@adonisjs/lucid": "^22.4.2",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@ufo-soft/caelus": "*",
     "@ufo-soft/caelus-cli": "*",
+    "@ufo-soft/caelus-mcp": "*",
     "@japa/api-client": "^3.2.1",
     "@tuyau/core": "^1.2.2",
     "@vinejs/vine": "^4.4.0",
     "better-sqlite3": "^13.0.3",
     "luxon": "^3.7.2",
-    "reflect-metadata": "^0.2.2"
+    "reflect-metadata": "^0.2.2",
+    "zod": "^4.0.0"
   },
   "hotHook": {
     "boundaries": [

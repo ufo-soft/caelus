@@ -3,7 +3,11 @@ import type { NextFn } from '@adonisjs/core/types/http'
 
 export default class ForceJsonResponseMiddleware {
   handle(ctx: HttpContext, next: NextFn) {
-    ctx.request.request.headers.accept = 'application/json'
+    // a client that already accepts JSON keeps its Accept header; MCP over streamable HTTP sends
+    // JSON and text/event-stream together, and the SDK rejects a request missing either
+    if (!ctx.request.header('accept')?.includes('application/json')) {
+      ctx.request.request.headers.accept = 'application/json'
+    }
     return next()
   }
 }
