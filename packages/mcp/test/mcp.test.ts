@@ -128,6 +128,35 @@ describe('mcp', () => {
 })
 
 describe('stdio', () => {
+  it('a call still running when stdin ends still answers before the server closes', async () => {
+    const stdin = new PassThrough()
+    const stdout = new PassThrough()
+    const out: string[] = []
+    stdout.on('data', (chunk) => out.push(String(chunk)))
+    const slow = new Registry()
+    slow.register({
+      name: 'slow',
+      command: { description: 'Takes a while', parameters: [] },
+      handler: () => new Promise((resolve) => setTimeout(() => resolve(ok('eventually')), 60)),
+    })
+
+    const done = stdio(slow, INFO, stdin, stdout)
+    const initialize = {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'test', version: '0' } },
+    }
+    stdin.write(JSON.stringify(initialize) + '\n')
+    stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n')
+    stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'slow', arguments: {} } }) + '\n')
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    stdin.end()
+
+    await expect(done).resolves.toBeUndefined()
+    expect(out.join('')).toContain('"text":"eventually"')
+  })
+
   it('speaks the protocol on the given streams and resolves when stdin ends', async () => {
     const stdin = new PassThrough()
     const stdout = new PassThrough()
