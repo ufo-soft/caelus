@@ -197,7 +197,18 @@ describe('stdio', () => {
     await new Promise((resolve) => setTimeout(resolve, 10))
     stdin.end()
 
+    // well inside the 60ms the handler would have taken, so this proves the server did not wait for it
     await expect(done).resolves.toBeUndefined()
+  }, 40)
+
+  it('a request for an unknown method in the final chunk is answered with an error, then the server closes', async () => {
+    const unknown = line({ jsonrpc: '2.0', id: 3, method: 'nope/method' })
+    const stdin = Readable.from([Buffer.from(initialize + initialized + unknown)])
+    const { done, written } = serve(registryOf(), stdin)
+
+    await expect(done).resolves.toBeUndefined()
+    expect(written()).toContain('"id":3')
+    expect(written()).toContain('"error"')
   })
 })
 

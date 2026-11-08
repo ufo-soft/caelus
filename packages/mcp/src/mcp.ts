@@ -1,18 +1,12 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
+  CancelledNotificationSchema,
   isJSONRPCErrorResponse,
-  isJSONRPCNotification,
   isJSONRPCRequest,
   isJSONRPCResultResponse,
 } from '@modelcontextprotocol/sdk/types.js'
-import type {
-  CallToolResult,
-  Implementation,
-  JSONRPCMessage,
-  JSONRPCNotification,
-  RequestId,
-} from '@modelcontextprotocol/sdk/types.js'
+import type { CallToolResult, Implementation, JSONRPCMessage, RequestId } from '@modelcontextprotocol/sdk/types.js'
 import type { Readable, Writable } from 'node:stream'
 import { z } from 'zod/v4'
 
@@ -50,41 +44,45 @@ export async function stdio(
 
   // The SDK transport reads stdin but never notices it ending, so a host closing it would hang us.
   // Closing the moment it ends would abort any request still being answered, after its handler
-  // had taken effect. So the transport's own boundary keeps the books: a request is pending from
-  // the instant it is parsed (this onmessage runs first, inside the data event) until its response
-  // has been written, and the close waits for an empty ledger. No timing is assumed.
+  // had taken effect. So the requests are tracked where the transport sees them: pending from the
+  // instant one is parsed (this onmessage runs first, inside the data event) until its response
+  // has been handed to the stream. The close waits for none pending, then for the stream to take
+  // what it was handed, since a pipe write returns before the bytes leave the process.
   const pending = new Set<RequestId>()
-  let ended = false
   const closeIfDone = () => {
-    if (ended && pending.size === 0) void server.close()
+    if (stdin.readableEnded && pending.size === 0) stdout.write('', () => void server.close())
   }
   transport.onmessage = (message) => {
     if (isJSONRPCRequest(message)) pending.add(message.id)
     // the SDK sends no response for a request the client cancelled, so stop waiting for one
-    if (isCancellation(message)) {
-      pending.delete(message.params.requestId)
+    const cancelled = cancelledId(message)
+    if (cancelled !== undefined) {
+      pending.delete(cancelled)
       closeIfDone()
     }
   }
   const send = transport.send.bind(transport)
   transport.send = async (message: JSONRPCMessage) => {
-    await send(message)
-    if ((isJSONRPCResultResponse(message) || isJSONRPCErrorResponse(message)) && message.id != null) {
-      pending.delete(message.id)
-      closeIfDone()
+    try {
+      await send(message)
+    } finally {
+      if ((isJSONRPCResultResponse(message) || isJSONRPCErrorResponse(message)) && message.id != null) {
+        pending.delete(message.id)
+        closeIfDone()
+      }
     }
   }
-  stdin.once('end', () => {
-    ended = true
-    closeIfDone()
-  })
+  stdin.once('end', closeIfDone)
 
   await server.connect(transport)
   return closed
 }
 
-const isCancellation = (message: JSONRPCMessage): message is JSONRPCNotification & { params: { requestId: RequestId } } =>
-  isJSONRPCNotification(message) && message.method === 'notifications/cancelled' && message.params?.requestId !== undefined
+// the SDK's own schema for the notification, and its own rule of ignoring a falsy id
+function cancelledId(message: JSONRPCMessage): RequestId | undefined {
+  const parsed = CancelledNotificationSchema.safeParse(message)
+  return parsed.success && parsed.data.params.requestId ? parsed.data.params.requestId : undefined
+}
 
 /** One zod field per parameter: the tool's inputSchema, and the validation that runs before a handler
  *  sees the arguments. The CLI's rules: string and integer required, boolean optional and false by default. */
