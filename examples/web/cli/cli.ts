@@ -27,8 +27,12 @@ const send: Send = async (name, args) => {
 const registry = new Registry()
 registry.register(forward(commands, send))
 
-// `counter --mcp`: the same forwarding registry as an MCP server over stdio, for a host to spawn.
-// Every tool call becomes a POST to the API; the process exits when the host disconnects.
+// the name hosts register this bin under, so the CLI's help and the MCP server's serverInfo say the same thing
+const INFO = { name: 'counter', version: '0.1.0' }
+
+// `counter --mcp`: the same forwarding registry as an MCP server over stdio, for a host to spawn;
+// every tool call becomes a POST to the API. Only as the first argument: anywhere else it is an
+// unknown option the CLI rejects, not a silent switch into a server.
 const argv = process.argv.slice(2)
-if (argv.includes('--mcp')) await stdio(registry, { name: 'counter', version: '0.1.0' })
-else process.exitCode = await cli(registry, argv, 'counter')
+if (argv[0] === '--mcp') await stdio(registry, INFO)
+else process.exitCode = await cli(registry, argv, INFO.name)
