@@ -269,7 +269,12 @@ describe('keybindings', () => {
   it('accepts a synchronous source and no source', async () => {
     const sync = keybindings(registryOf(['open', 'close']), defaults, () => '[bindings]\n"cmd+w" = "close"')
     await sync.reload()
-    expect(sync.table).toEqual(new Map([['cmd+n', 'open'], ['cmd+w', 'close']]))
+    expect(sync.table).toEqual(
+      new Map([
+        ['cmd+n', 'open'],
+        ['cmd+w', 'close'],
+      ]),
+    )
 
     const none = keybindings(registryOf(['open']), defaults)
     expect(await none.reload()).toEqual(ok(new Map([['cmd+n', 'open']])))

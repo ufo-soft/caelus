@@ -29,7 +29,12 @@ export async function cli(registry: Registry, argv: readonly string[], name: str
 }
 
 // root.command() rather than addCommand(): only the former copies exitOverride and output config to the child
-function subcommand(root: Command, { name, command: { description, parameters } }: Registration, registry: Registry, io: Io): void {
+function subcommand(
+  root: Command,
+  { name, command: { description, parameters } }: Registration,
+  registry: Registry,
+  io: Io,
+): void {
   const options = parameters.map(optionOf)
   const sub = root.command(name).description(description)
   for (const option of options) sub.addOption(option)

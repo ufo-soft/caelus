@@ -25,28 +25,53 @@ export function parseKeymap(text: string): Outcome<Keymap> {
 const MODIFIERS = ['cmd', 'ctrl', 'alt', 'shift'] as const
 type Modifier = (typeof MODIFIERS)[number]
 const EVENT_FLAG: Record<Modifier, 'metaKey' | 'ctrlKey' | 'altKey' | 'shiftKey'> = {
-  cmd: 'metaKey', ctrl: 'ctrlKey', alt: 'altKey', shift: 'shiftKey',
+  cmd: 'metaKey',
+  ctrl: 'ctrlKey',
+  alt: 'altKey',
+  shift: 'shiftKey',
 }
 const MODIFIER_ALIASES: Record<string, string> = {
-  command: 'cmd', meta: 'cmd', super: 'cmd',
+  command: 'cmd',
+  meta: 'cmd',
+  super: 'cmd',
   control: 'ctrl',
-  option: 'alt', opt: 'alt',
+  option: 'alt',
+  opt: 'alt',
 }
 
 const KEY_ALIASES: Record<string, string> = {
-  esc: 'escape', return: 'enter', del: 'delete', ' ': 'space',
-  up: 'arrowup', down: 'arrowdown', left: 'arrowleft', right: 'arrowright',
+  esc: 'escape',
+  return: 'enter',
+  del: 'delete',
+  ' ': 'space',
+  up: 'arrowup',
+  down: 'arrowdown',
+  left: 'arrowleft',
+  right: 'arrowright',
 }
 
 // event.code -> unshifted char, for when event.key is unusable (alt, shift+symbol, dead keys)
 const CODE_CHARS: Record<string, string> = {
-  Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Backslash: '\\',
-  Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Backquote: '`',
+  Minus: '-',
+  Equal: '=',
+  BracketLeft: '[',
+  BracketRight: ']',
+  Backslash: '\\',
+  Semicolon: ';',
+  Quote: "'",
+  Comma: ',',
+  Period: '.',
+  Slash: '/',
+  Backquote: '`',
 }
 
 /** Config text -> canonical chord string ('cmd+shift+k'), or '' if unparseable. */
 export function canonical(input: string): string {
-  const tokens = input.toLowerCase().split('+').map((t) => t.trim()).filter(Boolean)
+  const tokens = input
+    .toLowerCase()
+    .split('+')
+    .map((t) => t.trim())
+    .filter(Boolean)
   if (tokens.length === 0) return ''
   const key = tokens.pop()!
   const mods = tokens.map((t) => MODIFIER_ALIASES[t] ?? t)
@@ -59,7 +84,10 @@ const isModifier = (s: string): s is Modifier => (MODIFIERS as readonly string[]
 /** KeyboardEvent -> canonical chord string, or '' when the key is itself a modifier. */
 export function chordOf(e: KeyboardEvent): string {
   if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return ''
-  return chord(MODIFIERS.filter((m) => e[EVENT_FLAG[m]]), keyOf(e))
+  return chord(
+    MODIFIERS.filter((m) => e[EVENT_FLAG[m]]),
+    keyOf(e),
+  )
 }
 
 function keyOf(e: KeyboardEvent): string {

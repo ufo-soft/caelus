@@ -105,7 +105,9 @@ describe('mcp', () => {
       isError: true,
     })
     expect(await client.callTool({ name: 'boom', arguments: {} })).toMatchObject({ isError: true })
-    expect(await client.callTool({ name: 'quiet', arguments: {} })).toMatchObject({ content: [{ type: 'text', text: 'ok' }] })
+    expect(await client.callTool({ name: 'quiet', arguments: {} })).toMatchObject({
+      content: [{ type: 'text', text: 'ok' }],
+    })
   })
 
   it('invalid arguments never reach the handler', async () => {
