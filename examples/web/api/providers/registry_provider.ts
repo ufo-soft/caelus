@@ -30,5 +30,6 @@ export default class RegistryProvider {
   async start() {
     const router = await this.app.container.make('router')
     router.post('/api/v1/invoke', [() => import('#controllers/invoke_controller')])
+    router.post('/api/v1/mcp', [() => import('#controllers/mcp_controller')])
   }
 }
