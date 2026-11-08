@@ -1,11 +1,12 @@
-// Where the counter lives: one row in a SQLite file. Electron main and the CLI entry each
-// build their own registry from this, so both read and write the same row with no bridge
-// between the processes; the window just sees the row change on its next poll.
+// Where the counter lives: one row in a SQLite file. Electron main, the CLI and the MCP server
+// each build their own registry from this, so all of them read and write the same row with no
+// bridge between the processes; the window just sees the row change on its next poll.
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { Registry, bind, ok } from '@ufo-soft/caelus'
 import { cli } from '@ufo-soft/caelus-cli'
+import { stdio } from '@ufo-soft/caelus-mcp'
 
 import { commands } from './commands.js'
 
@@ -33,7 +34,18 @@ export function counter(): { registry: Registry; current: () => number } {
   return { registry, current: () => value(read.get()) }
 }
 
+// the name hosts register this app under, so the CLI's help and the MCP server's serverInfo say the same thing
+const INFO = { name: 'caelus-desktop', version: '0.1.0' }
+
+// Both runners are async so that a failure to open the file is a rejection the entries can report
+// and exit on, not a synchronous throw, which under Electron would be a modal dialog in a headless process.
+
 /** The CLI over a registry opened on the file. Both entries call this and differ only in how they exit. */
-export function runCli(argv: readonly string[]): Promise<number> {
-  return cli(counter().registry, argv, 'caelus-example')
+export async function runCli(argv: readonly string[]): Promise<number> {
+  return cli(counter().registry, argv, INFO.name)
+}
+
+/** The MCP server over a registry opened on the file, on stdin and stdout; resolves when the host disconnects. */
+export async function runMcp(): Promise<void> {
+  return stdio(counter().registry, INFO)
 }
