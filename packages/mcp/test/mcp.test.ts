@@ -1,4 +1,4 @@
-import { PassThrough } from 'node:stream'
+import { PassThrough, Readable } from 'node:stream'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
@@ -128,25 +128,87 @@ describe('mcp', () => {
 })
 
 describe('stdio', () => {
-  it('speaks the protocol on the given streams and resolves when stdin ends', async () => {
-    const stdin = new PassThrough()
+  const line = (message: object) => JSON.stringify(message) + '\n'
+  const initialize = line({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'initialize',
+    params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'test', version: '0' } },
+  })
+  const initialized = line({ jsonrpc: '2.0', method: 'notifications/initialized' })
+  const callSlow = line({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'slow', arguments: {} } })
+
+  /** A registry whose one command takes 60ms, so a request can still be running when stdin ends. */
+  function slowRegistry(): Registry {
+    const registry = new Registry()
+    registry.register({
+      name: 'slow',
+      command: { description: 'Takes a while', parameters: [] },
+      handler: () => new Promise((resolve) => setTimeout(() => resolve(ok('eventually')), 60)),
+    })
+    return registry
+  }
+
+  /** Runs stdio() on the given stdin and collects everything it writes. */
+  function serve(registry: Registry, stdin: Readable) {
     const stdout = new PassThrough()
     const out: string[] = []
     stdout.on('data', (chunk) => out.push(String(chunk)))
+    return { done: stdio(registry, INFO, stdin, stdout), written: () => out.join('') }
+  }
 
-    const done = stdio(registryOf(), INFO, stdin, stdout)
-    const initialize = {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'test', version: '0' } },
-    }
-    stdin.write(JSON.stringify(initialize) + '\n')
+  it('speaks the protocol on the given streams and resolves when stdin ends', async () => {
+    const stdin = new PassThrough()
+    const { done, written } = serve(registryOf(), stdin)
+    stdin.write(initialize)
     await new Promise((resolve) => setTimeout(resolve, 50))
     stdin.end()
 
     await expect(done).resolves.toBeUndefined()
-    expect(out.join('')).toContain('"serverInfo":{"name":"test-app","version":"1.0.0"}')
+    expect(written()).toContain('"serverInfo":{"name":"test-app","version":"1.0.0"}')
+  })
+
+  it('a call still running when stdin ends still answers before the server closes', async () => {
+    const stdin = new PassThrough()
+    const { done, written } = serve(slowRegistry(), stdin)
+    stdin.write(initialize + initialized + callSlow)
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    stdin.end()
+
+    await expect(done).resolves.toBeUndefined()
+    expect(written()).toContain('"text":"eventually"')
+  })
+
+  it('a call parsed from the final chunk, with EOF right behind it, still answers', async () => {
+    // one chunk and then the end, delivered in the same turn: the request must be pending before
+    // the end is observed, or the close aborts it after the handler has already run
+    const stdin = Readable.from([Buffer.from(initialize + initialized + callSlow)])
+    const { done, written } = serve(slowRegistry(), stdin)
+
+    await expect(done).resolves.toBeUndefined()
+    expect(written()).toContain('"text":"eventually"')
+  })
+
+  it('a request the client cancelled is not waited for', async () => {
+    const stdin = new PassThrough()
+    const { done } = serve(slowRegistry(), stdin)
+    const cancel = line({ jsonrpc: '2.0', method: 'notifications/cancelled', params: { requestId: 2 } })
+    stdin.write(initialize + initialized + callSlow + cancel)
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    stdin.end()
+
+    // well inside the 60ms the handler would have taken, so this proves the server did not wait for it
+    await expect(done).resolves.toBeUndefined()
+  }, 40)
+
+  it('a request for an unknown method in the final chunk is answered with an error, then the server closes', async () => {
+    const unknown = line({ jsonrpc: '2.0', id: 3, method: 'nope/method' })
+    const stdin = Readable.from([Buffer.from(initialize + initialized + unknown)])
+    const { done, written } = serve(registryOf(), stdin)
+
+    await expect(done).resolves.toBeUndefined()
+    expect(written()).toContain('"id":3')
+    expect(written()).toContain('"error"')
   })
 })
 
