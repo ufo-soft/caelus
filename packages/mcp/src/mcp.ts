@@ -1,6 +1,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import type { CallToolResult, Implementation } from '@modelcontextprotocol/sdk/types.js'
+import {
+  isJSONRPCErrorResponse,
+  isJSONRPCNotification,
+  isJSONRPCRequest,
+  isJSONRPCResultResponse,
+} from '@modelcontextprotocol/sdk/types.js'
+import type {
+  CallToolResult,
+  Implementation,
+  JSONRPCMessage,
+  JSONRPCNotification,
+  RequestId,
+} from '@modelcontextprotocol/sdk/types.js'
 import type { Readable, Writable } from 'node:stream'
 import { z } from 'zod/v4'
 
@@ -10,66 +22,69 @@ import type { Args, Outcome, Parameter, Registry } from '@ufo-soft/caelus'
 /** Exposes the registry as an MCP server named for the app: one tool per command, all derived. Returns
  *  the SDK's server so the app can connect whatever transport it has; for the spawned-process case, stdio(). */
 export function mcp(registry: Registry, info: Implementation): McpServer {
-  return build(registry, info, (call) => call)
+  // declared up front so an empty registry still answers tools/list instead of "method not found"
+  const server = new McpServer(info, { capabilities: { tools: {} } })
+  for (const { name, command } of registry.all()) {
+    server.registerTool(
+      name,
+      { description: command.description, inputSchema: shapeOf(command.parameters) },
+      async (args: Args) => resultOf(await registry.invoke(name, args)),
+    )
+  }
+  return server
 }
 
 /** The registry as an MCP server on this process's stdin and stdout, the way a host launches one.
- *  Resolves when the host disconnects, after any call still running has answered.
- *  Handlers must not write to stdout: that is the protocol's channel. */
+ *  Resolves when the host disconnects, once every request already received has been answered; a
+ *  handler that never settles keeps the process alive. Handlers must not write to stdout: that is
+ *  the protocol's channel. */
 export async function stdio(
   registry: Registry,
   info: Implementation,
   stdin: Readable = process.stdin,
   stdout: Writable = process.stdout,
 ): Promise<void> {
-  const inFlight = tracker()
-  const server = build(registry, info, inFlight.track)
+  const server = mcp(registry, info)
   const closed = new Promise<void>((resolve) => (server.server.onclose = resolve))
+  const transport = new StdioServerTransport(stdin, stdout)
+
   // The SDK transport reads stdin but never notices it ending, so a host closing it would hang us.
-  // A call still running when it ends gets to answer first; closing earlier would drop the reply
-  // after the handler had already taken effect. The SDK writes that reply after the handler
-  // returns, so the close waits one more turn of the event loop for the write to be issued.
-  stdin.once('end', () => void inFlight.drained().then(nextTurn).then(() => server.close()))
-  await server.connect(new StdioServerTransport(stdin, stdout))
+  // Closing the moment it ends would abort any request still being answered, after its handler
+  // had taken effect. So the transport's own boundary keeps the books: a request is pending from
+  // the instant it is parsed (this onmessage runs first, inside the data event) until its response
+  // has been written, and the close waits for an empty ledger. No timing is assumed.
+  const pending = new Set<RequestId>()
+  let ended = false
+  const closeIfDone = () => {
+    if (ended && pending.size === 0) void server.close()
+  }
+  transport.onmessage = (message) => {
+    if (isJSONRPCRequest(message)) pending.add(message.id)
+    // the SDK sends no response for a request the client cancelled, so stop waiting for one
+    if (isCancellation(message)) {
+      pending.delete(message.params.requestId)
+      closeIfDone()
+    }
+  }
+  const send = transport.send.bind(transport)
+  transport.send = async (message: JSONRPCMessage) => {
+    await send(message)
+    if ((isJSONRPCResultResponse(message) || isJSONRPCErrorResponse(message)) && message.id != null) {
+      pending.delete(message.id)
+      closeIfDone()
+    }
+  }
+  stdin.once('end', () => {
+    ended = true
+    closeIfDone()
+  })
+
+  await server.connect(transport)
   return closed
 }
 
-// declared up front so an empty registry still answers tools/list instead of "method not found"
-function build(registry: Registry, info: Implementation, track: <T>(call: Promise<T>) => Promise<T>): McpServer {
-  const server = new McpServer(info, { capabilities: { tools: {} } })
-  for (const { name, command } of registry.all()) {
-    server.registerTool(
-      name,
-      { description: command.description, inputSchema: shapeOf(command.parameters) },
-      async (args: Args) => resultOf(await track(registry.invoke(name, args))),
-    )
-  }
-  return server
-}
-
-const nextTurn = () => new Promise<void>((resolve) => setImmediate(resolve))
-
-/** Counts calls in flight; drained() resolves once there are none. */
-function tracker() {
-  let count = 0
-  let waiting: (() => void)[] = []
-  const settle = () => {
-    if (--count > 0) return
-    waiting.forEach((resolve) => resolve())
-    waiting = []
-  }
-  return {
-    track: async <T>(call: Promise<T>): Promise<T> => {
-      count++
-      try {
-        return await call
-      } finally {
-        settle()
-      }
-    },
-    drained: () => (count === 0 ? Promise.resolve() : new Promise<void>((resolve) => waiting.push(resolve))),
-  }
-}
+const isCancellation = (message: JSONRPCMessage): message is JSONRPCNotification & { params: { requestId: RequestId } } =>
+  isJSONRPCNotification(message) && message.method === 'notifications/cancelled' && message.params?.requestId !== undefined
 
 /** One zod field per parameter: the tool's inputSchema, and the validation that runs before a handler
  *  sees the arguments. The CLI's rules: string and integer required, boolean optional and false by default. */
