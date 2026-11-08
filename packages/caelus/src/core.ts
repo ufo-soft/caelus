@@ -27,6 +27,13 @@ export type Outcome<T = unknown> =
 export const ok = <T = null>(data: T = null as T): Outcome<T> => ({ kind: OK, data })
 export const failed = (reason: string): Outcome<never> => ({ kind: FAILED, reason })
 
+/** Outcome data as text, the one form every surface shows: a string as-is, other data as JSON, no data as nothing. */
+export function render(data: unknown): string {
+  if (data == null) return ''
+  if (typeof data === 'string') return data
+  return JSON.stringify(data)
+}
+
 export type Handler = (args: Args) => Outcome | Promise<Outcome>
 
 export interface Registration {

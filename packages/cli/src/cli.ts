@@ -1,6 +1,6 @@
 import { Command, CommanderError, InvalidArgumentError, Option } from 'commander'
 
-import { FAILED } from '@ufo-soft/caelus'
+import { FAILED, render } from '@ufo-soft/caelus'
 import type { Args, Parameter, Registration, Registry } from '@ufo-soft/caelus'
 
 /** Where the CLI writes. Defaults to the process streams; tests hand in collectors. */
@@ -36,11 +36,10 @@ function subcommand(root: Command, { name, command: { description, parameters } 
   sub.action(async (opts: OptionValues) => {
     const outcome = await registry.invoke(name, argsOf(options, opts))
     if (outcome.kind === FAILED) return sub.error(outcome.reason)
-    if (outcome.data != null) io.out(render(outcome.data) + '\n')
+    const text = render(outcome.data)
+    if (text) io.out(text + '\n')
   })
 }
-
-const render = (data: unknown): string => (typeof data === 'string' ? data : JSON.stringify(data))
 
 /** One commander option per parameter: string and integer take a value and are mandatory, boolean is a flag. */
 export function optionOf(parameter: Parameter): Option {

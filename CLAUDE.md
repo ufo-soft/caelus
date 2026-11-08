@@ -46,6 +46,7 @@ packages/caelus/     @ufo-soft/caelus
   src/keybindings.ts   canonical, chordOf, parseKeymap, resolve, attach, keybindings. One file by design.
   test/                One test file per module. Fakes are small helpers in the test file.
 packages/cli/        @ufo-soft/caelus-cli: cli, optionOf, argsOf. A registry as a commander CLI.
+packages/mcp/        @ufo-soft/caelus-mcp: mcp, stdio, shapeOf, resultOf. A registry as an MCP server (official SDK).
 examples/            One app per architecture, the same counter in each, sharing no code on purpose.
   browser/             One process: everything in the page.
   desktop/             The counter is a SQLite row; main and the CLI each hold a registry on the file, no bridge.

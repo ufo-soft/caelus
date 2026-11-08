@@ -11,6 +11,8 @@ This is a TypeScript port of the Kotlin Multiplatform prototype at
 | package | what |
 |---|---|
 | [`@ufo-soft/caelus`](packages/caelus) | the registry and the keybindings surface |
+| [`@ufo-soft/caelus-cli`](packages/cli) | a registry as a command-line interface, via commander |
+| [`@ufo-soft/caelus-mcp`](packages/mcp) | a registry as an MCP server, via the official SDK |
 
 Adapters that carry their own dependencies get their own package, so an app
 only installs what it uses.
