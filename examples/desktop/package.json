@@ -13,7 +13,9 @@
   "dependencies": {
     "@ufo-soft/caelus": "*",
     "@ufo-soft/caelus-cli": "*",
-    "@ufo-soft/caelus-mcp": "*"
+    "@ufo-soft/caelus-mcp": "*",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "electron": "^45.2.3",

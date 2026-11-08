@@ -50,8 +50,10 @@ To drive `desktop` from a terminal the way an installed app would be,
 CLI through the Electron binary) and `caelus-desktop-cli` runs the CLI through
 plain Node. `examples/desktop/scripts/cli.sh demo` exercises both; they share
 the SQLite file with the window, so they work with or without one running.
-`caelus-desktop --mcp` is the same registry as an MCP server over stdio, for a
-host to spawn: `claude mcp add caelus-desktop -- ~/.local/bin/caelus-desktop --mcp`.
+`caelus-desktop --mcp` serves the same commands as an MCP server over stdio,
+on its own registry over the same file, for a host to spawn:
+`claude mcp add caelus-desktop -- ~/.local/bin/caelus-desktop --mcp`, or without
+the Electron boot, `-- node <repo>/examples/desktop/dist/mcp.js`.
 
 `examples/web/api` has its own toolchain, so it isn't part of the root build.
 First run, from `examples/web/api`:
