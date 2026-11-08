@@ -94,5 +94,8 @@ adapter package's `package.json` (for example `packages/cli`). `npm version`
 bumps the packages but not the ranges between them, and a stale range makes
 npm stop linking the workspace and resolve the old version from the registry.
 
-The tag triggers the release workflow, which publishes every public package
-and creates the GitHub Release.
+The tag triggers the release workflow, which publishes every package whose
+version is not on the registry yet and creates the GitHub Release. A version
+published by hand, which the first one of any package has to be, is skipped
+rather than failed, so the same tag works for the first release and every
+release after it.

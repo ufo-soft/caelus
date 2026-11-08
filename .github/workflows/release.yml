@@ -28,7 +28,18 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
-      - run: npm publish --workspaces --provenance
+      # Publish each package whose version is not on the registry yet, so a version published by hand
+      # (the first one of any package must be) does not make the tag fail.
+      - run: |
+          for dir in packages/*; do
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version is already published, skipping"
+            else
+              npm publish -w "$dir" --provenance
+            fi
+          done
       - run: gh release create "$GITHUB_REF_NAME" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
