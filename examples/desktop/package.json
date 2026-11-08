@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@ufo-soft/caelus": "*",
-    "@ufo-soft/caelus-cli": "*"
+    "@ufo-soft/caelus-cli": "*",
+    "@ufo-soft/caelus-mcp": "*"
   },
   "devDependencies": {
     "electron": "^45.2.3",

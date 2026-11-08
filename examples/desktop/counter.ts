@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { Registry, bind, ok } from '@ufo-soft/caelus'
 import { cli } from '@ufo-soft/caelus-cli'
+import { stdio } from '@ufo-soft/caelus-mcp'
 
 import { commands } from './commands.js'
 
@@ -33,7 +34,14 @@ export function counter(): { registry: Registry; current: () => number } {
   return { registry, current: () => value(read.get()) }
 }
 
+const INFO = { name: 'caelus-example', version: '0.1.0' }
+
 /** The CLI over a registry opened on the file. Both entries call this and differ only in how they exit. */
 export function runCli(argv: readonly string[]): Promise<number> {
-  return cli(counter().registry, argv, 'caelus-example')
+  return cli(counter().registry, argv, INFO.name)
+}
+
+/** The MCP server over a registry opened on the file, on stdin and stdout; resolves when the host disconnects. */
+export function runMcp(): Promise<void> {
+  return stdio(counter().registry, INFO)
 }

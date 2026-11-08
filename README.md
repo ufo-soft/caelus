@@ -39,7 +39,7 @@ api, page and bin share `api/registry/descriptions.ts` the same way.
 | example | shape |
 |---|---|
 | `examples/browser` | one process: counter, registry, keys and buttons all in the page |
-| `examples/desktop` | the counter is a row in `~/.caelus-example.sqlite`; Electron main and the CLI each hold a registry on that file with no bridge between them, and the renderer forwards to main over IPC |
+| `examples/desktop` | the counter is a row in `~/.caelus-example.sqlite`; Electron main, the CLI and the MCP server (`--mcp`, stdio) each hold a registry on that file with no bridge between them, and the renderer forwards to main over IPC |
 | `examples/web/api` | an AdonisJS back end owns the counter in SQLite behind its own REST API; the registry sits beside it |
 | `examples/web/app` | the browser half of `web`: the same page as the others, whose forwarders dispatch into a hand-written REST client; the API's URL is in `VITE_API_URL` |
 | `examples/web/cli` | a standalone `counter` binary: the same descriptions, forwarded to the API's invoke route over HTTP; `COUNTER_API` says where |
@@ -50,6 +50,8 @@ To drive `desktop` from a terminal the way an installed app would be,
 CLI through the Electron binary) and `caelus-desktop-cli` runs the CLI through
 plain Node. `examples/desktop/scripts/cli.sh demo` exercises both; they share
 the SQLite file with the window, so they work with or without one running.
+`caelus-desktop --mcp` is the same registry as an MCP server over stdio, for a
+host to spawn: `claude mcp add caelus-desktop -- ~/.local/bin/caelus-desktop --mcp`.
 
 `examples/web/api` has its own toolchain, so it isn't part of the root build.
 First run, from `examples/web/api`:
