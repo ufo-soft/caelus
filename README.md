@@ -42,7 +42,7 @@ api, page and bin share `api/registry/descriptions.ts` the same way.
 | `examples/desktop` | the counter is a row in `~/.caelus-example.sqlite`; Electron main, the CLI and the MCP server (`--mcp`, stdio) each hold a registry on that file with no bridge between them, and the renderer forwards to main over IPC |
 | `examples/web/api` | an AdonisJS back end owns the counter in SQLite behind its own REST API; the registry sits beside it |
 | `examples/web/app` | the browser half of `web`: the same page as the others, whose forwarders dispatch into a hand-written REST client; the API's URL is in `VITE_API_URL` |
-| `examples/web/cli` | a standalone `counter` binary: the same descriptions, forwarded to the API's invoke route over HTTP; `COUNTER_API` says where |
+| `examples/web/cli` | a standalone `counter` binary: the same descriptions, forwarded to the API's invoke route over HTTP; `COUNTER_API` says where. `counter --mcp` is the same registry as an MCP server over stdio, for a host to spawn once `npm run build` has produced it: `claude mcp add counter -- node <repo>/examples/web/cli/bin/counter.js --mcp`, with `-e COUNTER_API=...` to point it at another API |
 
 To drive `desktop` from a terminal the way an installed app would be,
 `examples/desktop/scripts/build.sh` builds it and installs two launchers in
