@@ -1,8 +1,34 @@
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import type { CallToolResult, Implementation } from '@modelcontextprotocol/sdk/types.js'
 import { z } from 'zod'
 
 import { OK } from '@ufo-soft/caelus'
-import type { Outcome, Parameter } from '@ufo-soft/caelus'
+import type { Args, Outcome, Parameter, Registry } from '@ufo-soft/caelus'
+
+const DEFAULT_INFO: Implementation = { name: 'caelus', version: '0.1.0' }
+
+/** Exposes the registry as an MCP server: one tool per command, all derived. Returns the SDK's
+ *  server so the app can connect whatever transport it has; for the spawned-process case, stdio(). */
+export function mcp(registry: Registry, info: Implementation = DEFAULT_INFO): McpServer {
+  const server = new McpServer(info)
+  for (const { name, command } of registry.all()) {
+    server.registerTool(
+      name,
+      { description: command.description, inputSchema: shapeOf(command.parameters) },
+      async (args: Args) => resultOf(await registry.invoke(name, args)),
+    )
+  }
+  return server
+}
+
+/** The registry as an MCP server on this process's stdin and stdout, the way a host launches one.
+ *  Resolves when the host disconnects. */
+export async function stdio(registry: Registry, info?: Implementation): Promise<void> {
+  const server = mcp(registry, info)
+  await server.connect(new StdioServerTransport())
+  return new Promise((resolve) => (server.server.onclose = resolve))
+}
 
 /** One required zod field per parameter: the tool's inputSchema, and the validation that
  *  runs before a handler sees the arguments. Mirrors the CLI: integers must be integers. */
