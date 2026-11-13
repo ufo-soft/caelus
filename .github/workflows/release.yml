@@ -3,7 +3,7 @@ name: Release
 # Triggered by a v* tag. All packages share one version: bump with
 # `npm version <patch|minor|major> --workspaces --no-git-tag-version`, commit, tag, push --follow-tags.
 # Publishes every public workspace package via trusted publishing (OIDC, no token secret)
-# and creates the GitHub Release for the same commit.
+# and creates the GitHub Release for the same commit, then publishes the docs site for the tag.
 
 on:
   push:
@@ -43,3 +43,66 @@ jobs:
       - run: gh release create "$GITHUB_REF_NAME" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
+
+  # The docs site at caelus.ufosoft.dev, one folder per minor version: v0.1.3 builds /v0.1/, replacing
+  # the earlier patch's. The newest tag also builds the root; a patch to an older minor leaves it alone.
+  # infra/ is applied by hand and its role can only sync the bucket and invalidate, so that is all this
+  # does. The three SITE_* repository variables are infra/'s outputs.
+  docs:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    # two tags pushed together must not interleave their root syncs
+    concurrency:
+      group: docs
+      cancel-in-progress: false
+    env:
+      BUCKET: ${{ vars.SITE_BUCKET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # every tag: the newest-tag check and versions.json read them
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.SITE_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Build and sync
+        run: |
+          set -euo pipefail
+          # Hashed files under assets/ never change; everything else is revalidated on every request.
+          # Each pass deletes only its own kind of file, since --delete honours --exclude.
+          sync() {
+            local prefix=$1
+            shift
+            aws s3 sync site/.vitepress/dist "s3://$BUCKET/$prefix" --delete --exclude 'assets/*' "$@" \
+              --cache-control 'public, max-age=0, must-revalidate'
+            aws s3 sync site/.vitepress/dist/assets "s3://$BUCKET/${prefix}assets" --delete \
+              --cache-control 'public, max-age=31536000, immutable'
+          }
+
+          minor=$(cut -d. -f1,2 <<< "$GITHUB_REF_NAME")
+          npm run build -w site -- --base "/$minor/"
+          sync "$minor/"
+
+          newest=$(git tag -l 'v*' --sort=-v:refname | head -1)
+          if [ "$GITHUB_REF_NAME" = "$newest" ]; then
+            npm run build -w site
+            # the root's --delete must not reach the version folders or versions.json
+            sync '' --exclude 'v[0-9]*' --exclude versions.json
+          fi
+      # Rewritten whole from the tags, newest first, so it cannot drift: ["v0.2", "v0.1"]. The switcher
+      # in every build reads it at runtime.
+      - name: Write versions.json
+        run: |
+          set -euo pipefail
+          git tag -l 'v*' --sort=-v:refname | cut -d. -f1,2 | uniq | jq -R . | jq -cs . \
+            | aws s3 cp - "s3://$BUCKET/versions.json" \
+                --content-type application/json --cache-control 'public, max-age=0, must-revalidate'
+      - run: aws cloudfront create-invalidation --distribution-id "${{ vars.SITE_DISTRIBUTION_ID }}" --paths '/*'

@@ -99,3 +99,8 @@ version is not on the registry yet and creates the GitHub Release. A version
 published by hand, which the first one of any package has to be, is skipped
 rather than failed, so the same tag works for the first release and every
 release after it.
+
+The same workflow then publishes the docs site at
+[caelus.ufosoft.dev](https://caelus.ufosoft.dev), built from the tag into a
+folder for its minor version (`v0.1.3` builds `/v0.1/`). The newest tag also
+builds the root, so a patch to an older minor never replaces the latest docs.
