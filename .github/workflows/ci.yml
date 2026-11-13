@@ -16,6 +16,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      # the release builds the docs too; a dead link fails here first
-      - run: npm run build -w site
+      # builds every package and type-checks the docs snippets, then tests
       - run: npm test
+      # the release builds the docs too; a dead link fails here first. After the tests, because TypeDoc
+      # reads the adapters' imports of core from the built dist/
+      - run: npm run build -w site

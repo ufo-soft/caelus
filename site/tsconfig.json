@@ -1,0 +1,14 @@
+{
+  // Type-checks the snippets the pages import, against the packages' built dist/, the way a user's code
+  // compiles. Part of the root build, so CI fails on an example that doesn't compile.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["snippets"]
+}
