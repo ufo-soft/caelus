@@ -1,6 +1,6 @@
 # caelus
 
-Define a command once. Dispatch it from anywhere — a button, a key chord, a
+Define a command once. Dispatch it from anywhere: a button, a key chord, a
 CLI subcommand, an MCP tool call.
 
 This is a TypeScript port of the Kotlin Multiplatform prototype at

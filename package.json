@@ -16,7 +16,7 @@
     "web:app": "npm run build && npm run dev -w examples/web/app",
     "pretest": "npm run build && tsc -p tsconfig.test.json",
     "test": "vitest run",
-    "lint": "eslint . && prettier --check .",
+    "lint": "eslint . && prettier --check . && node scripts/lint-docs.js",
     "format": "prettier --write ."
   },
   "devDependencies": {

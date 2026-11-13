@@ -9,5 +9,7 @@ export default defineConfig(
   globalIgnores(['**/dist/', '**/node_modules/', 'examples/web/api/', '**/.adonisjs/', '**/.vitepress/cache/']),
   eslint.configs.recommended,
   tseslint.configs.recommended,
+  // repo scripts are plain Node
+  { files: ['scripts/**'], languageOptions: { globals: { console: 'readonly', process: 'readonly' } } },
   prettier,
 )
