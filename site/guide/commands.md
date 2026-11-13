@@ -83,6 +83,7 @@ The check needs the exact keys. An object annotated as `Commands` has plain `str
 rejects it. `satisfies Commands` checks the shape and keeps the keys.
 
 A description file holds data only, so a process that needs the commands but not their handlers can
-import it without pulling in the code behind them.
+import it without pulling in the code behind them. That process registers
+[forwarders](./forwarding.md) to the same descriptions.
 
 See the [API reference](/api/) for every type and signature.
