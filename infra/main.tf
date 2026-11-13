@@ -143,6 +143,33 @@ resource "aws_cloudfront_origin_access_control" "site" {
   signing_protocol                  = "sigv4"
 }
 
+# VitePress links pages by file (packages/cli.html), but each version's own root is a folder, /v0.1/,
+# and S3 has no folder index. A path ending in / gets its index.html. A bare version folder, /v0.1,
+# gets the slash first, as a redirect, so the browser's URL matches the base that build expects.
+resource "aws_cloudfront_function" "index" {
+  name    = "caelus-site-index"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+
+  code = <<-EOT
+    function handler(event) {
+      var request = event.request;
+      if (request.uri.endsWith('/')) {
+        request.uri += 'index.html';
+        return request;
+      }
+      if (/^\/v\d+\.\d+$/.test(request.uri)) {
+        return {
+          statusCode: 301,
+          statusDescription: 'Moved Permanently',
+          headers: { location: { value: request.uri + '/' } },
+        };
+      }
+      return request;
+    }
+  EOT
+}
+
 resource "aws_cloudfront_distribution" "site" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -165,6 +192,11 @@ resource "aws_cloudfront_distribution" "site" {
     compress                   = true
     cache_policy_id            = data.aws_cloudfront_cache_policy.optimized.id
     response_headers_policy_id = data.aws_cloudfront_response_headers_policy.security.id
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.index.arn
+    }
   }
 
   # A private bucket answers a missing key with 403, not 404. Both get VitePress's 404 page.

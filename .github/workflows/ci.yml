@@ -16,4 +16,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      # the release builds the docs too; a dead link fails here first
+      - run: npm run build -w site
       - run: npm test

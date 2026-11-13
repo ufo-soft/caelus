@@ -23,6 +23,14 @@ terraform apply
 The first apply waits for the certificate to be issued, which takes a few minutes. Commit
 `.terraform.lock.hcl` when `init` changes it.
 
+The release workflow's docs job reads three outputs as repository variables:
+
+```sh
+gh variable set SITE_BUCKET --body "$(terraform output -raw site_bucket)"
+gh variable set SITE_DISTRIBUTION_ID --body "$(terraform output -raw distribution_id)"
+gh variable set SITE_ROLE_ARN --body "$(terraform output -raw release_role_arn)"
+```
+
 ## Uploading a build by hand
 
 ```sh
