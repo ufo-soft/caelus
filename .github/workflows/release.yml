@@ -1,16 +1,16 @@
 name: Release
 
-# Triggered by a v* tag. All packages share one version: bump with
-# `npm version <patch|minor|major> --workspaces --no-git-tag-version`, commit, tag, push --follow-tags.
-# Publishes every public workspace package via trusted publishing (OIDC, no token secret)
-# and creates the GitHub Release for the same commit, then publishes the docs site for the tag.
+# Triggered by publishing a GitHub Release, whose tag (vX.Y.Z) is the version: the packages say 0.0.0
+# in the repo, and this stamps the tag's version into them, and into the adapters' range on core,
+# before publishing. Publishes every package via trusted publishing (OIDC, no token secret), then
+# the docs site for the tag.
 
 on:
-  push:
-    tags: ['v*']
+  release:
+    types: [published]
 
 permissions:
-  contents: write
+  contents: read
   id-token: write
 
 jobs:
@@ -28,8 +28,16 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      # Only the copy being published carries the version; nothing is committed back.
+      - name: Stamp the version from the tag
+        run: |
+          set -euo pipefail
+          version=${GITHUB_REF_NAME#v}
+          [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Tag $GITHUB_REF_NAME is not vX.Y.Z"; exit 1; }
+          npm pkg set version="$version" -w packages/caelus -w packages/cli -w packages/mcp
+          npm pkg set "dependencies.@ufo-soft/caelus=^$version" -w packages/cli -w packages/mcp
       # Publish each package whose version is not on the registry yet, so a version published by hand
-      # (the first one of any package must be) does not make the tag fail.
+      # (the first one of any package must be), or a re-run, does not fail the release.
       - run: |
           for dir in packages/*; do
             name=$(node -p "require('./$dir/package.json').name")
@@ -40,9 +48,6 @@ jobs:
               npm publish -w "$dir" --provenance
             fi
           done
-      - run: gh release create "$GITHUB_REF_NAME" --generate-notes
-        env:
-          GH_TOKEN: ${{ github.token }}
 
   # The docs site at caelus.ufosoft.dev, one folder per minor version: v0.1.3 builds /v0.1/, replacing
   # the earlier patch's. The newest tag also builds the root; a patch to an older minor leaves it alone.

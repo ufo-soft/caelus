@@ -1,6 +1,6 @@
 {
   "name": "@ufo-soft/caelus-cli",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Expose a caelus registry as a command-line interface.",
   "license": "MIT",
   "repository": {
@@ -26,7 +26,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@ufo-soft/caelus": "^0.1.0",
+    "@ufo-soft/caelus": "^0.0.0",
     "commander": "^15.0.0"
   }
 }
