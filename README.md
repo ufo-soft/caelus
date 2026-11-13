@@ -81,24 +81,14 @@ open, run `npx tsc -b --watch` alongside so every `dist/` stays fresh.
 
 ## Releasing
 
-All packages share one version and release together on one tag.
+Create a GitHub Release with a new `vX.Y.Z` tag. That is the whole process.
 
-```sh
-npm version patch --workspaces --no-git-tag-version
-git commit -am "v0.1.1" && git tag v0.1.1
-git push --follow-tags
-```
-
-On a minor or major bump, also update the `@ufo-soft/caelus` range in each
-adapter package's `package.json` (for example `packages/cli`). `npm version`
-bumps the packages but not the ranges between them, and a stale range makes
-npm stop linking the workspace and resolve the old version from the registry.
-
-The tag triggers the release workflow, which publishes every package whose
-version is not on the registry yet and creates the GitHub Release. A version
-published by hand, which the first one of any package has to be, is skipped
-rather than failed, so the same tag works for the first release and every
-release after it.
+All packages share one version, and the tag is where it lives: in the repo
+every package says `0.0.0`, and the adapters depend on core at `^0.0.0` so
+the workspace links. Publishing the Release triggers the release workflow,
+which stamps the tag's version into the three packages and into the
+adapters' range on core, then publishes every package whose version is not
+on the registry yet. Nothing is committed back.
 
 The same workflow then publishes the docs site at
 [caelus.ufosoft.dev](https://caelus.ufosoft.dev), built from the tag into a

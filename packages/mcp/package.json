@@ -1,6 +1,6 @@
 {
   "name": "@ufo-soft/caelus-mcp",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Expose a caelus registry as an MCP server.",
   "license": "MIT",
   "repository": {
@@ -26,7 +26,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@ufo-soft/caelus": "^0.1.0"
+    "@ufo-soft/caelus": "^0.0.0"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
