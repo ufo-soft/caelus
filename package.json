@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/*",
     "examples/*",
-    "examples/web/*"
+    "examples/web/*",
+    "site"
   ],
   "scripts": {
     "build": "tsc -b && tsc -p examples/browser && tsc -p examples/desktop && tsc -p examples/web/app && tsc -p examples/web/cli",
