@@ -56,6 +56,7 @@ examples/            One app per architecture, the same counter in each, sharing
   web/app/             The page for web: the registry's forwarders dispatch into a REST client, VITE_API_URL says where.
                        The api, page and bin share api/registry/descriptions.ts, as desktop's processes share theirs.
   web/cli/             A standalone `counter` bin: forwarders over HTTP to the API's invoke route.
+infra/               Terraform for the docs site: S3, CloudFront, ACM, Route 53, the release role. Applied by hand.
 docs/                Architecture and the extracted brainstorm transcripts.
 ```
 
