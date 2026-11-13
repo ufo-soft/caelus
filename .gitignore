@@ -1,6 +1,7 @@
 node_modules/
 dist/
 *.tsbuildinfo
+.vitepress/cache/
 .idea/
 
 # the global gitignore drops .claude/*; this project tracks it (style guide, skills), minus local settings
