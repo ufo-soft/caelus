@@ -1,0 +1,4 @@
+[bindings]
+"ctrl+alt+n" = "newTodo"
+"cmd+k" = "unbind"
+"cmd+/" = "search"

@@ -33,3 +33,4 @@ outcome has a `reason` instead.
 ## Next
 
 - [Commands](./commands.md): parameters, handlers, outcomes, and the registry in full.
+- [Keybindings](./keybindings.md), [CLI](./cli.md), [MCP](./mcp.md): the surfaces.

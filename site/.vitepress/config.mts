@@ -29,11 +29,11 @@ export default withMermaid(
             ],
           },
           {
-            text: 'Packages',
+            text: 'Surfaces',
             items: [
-              { text: '@ufo-soft/caelus', link: '/packages/caelus' },
-              { text: '@ufo-soft/caelus-cli', link: '/packages/cli' },
-              { text: '@ufo-soft/caelus-mcp', link: '/packages/mcp' },
+              { text: 'Keybindings', link: '/guide/keybindings' },
+              { text: 'CLI', link: '/guide/cli' },
+              { text: 'MCP', link: '/guide/mcp' },
             ],
           },
           { text: 'Architecture', link: '/architecture' },

@@ -9,6 +9,7 @@
     "preview": "vitepress preview"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@ufo-soft/caelus": "*",
     "@ufo-soft/caelus-cli": "*",
     "@ufo-soft/caelus-mcp": "*",

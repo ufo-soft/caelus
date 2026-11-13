@@ -11,9 +11,9 @@ Each parameter has a `name`, a `type`, and a `description`. The type is `'string
 `'boolean'`.
 
 The registry does not check args against the parameters. A handler receives whatever the caller
-passed, typed as `Readonly<Record<string, unknown>>`, and checks what it uses. The CLI and MCP
-surfaces do validate: they build their options and input schemas from the parameters. A key chord
-passes `{}`.
+passed, typed as `Readonly<Record<string, unknown>>`, and checks what it uses. The [CLI](./cli.md)
+and [MCP](./mcp.md) surfaces do validate: they build their options and input schemas from the
+parameters. A [key chord](./keybindings.md) passes `{}`.
 
 ## Outcomes
 
