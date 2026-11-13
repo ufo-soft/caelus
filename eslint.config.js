@@ -6,7 +6,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 import tseslint from 'typescript-eslint'
 
 export default defineConfig(
-  globalIgnores(['**/dist/', '**/node_modules/', 'examples/web/api/', '**/.adonisjs/']),
+  globalIgnores(['**/dist/', '**/node_modules/', 'examples/web/api/', '**/.adonisjs/', '**/.vitepress/cache/']),
   eslint.configs.recommended,
   tseslint.configs.recommended,
   prettier,
