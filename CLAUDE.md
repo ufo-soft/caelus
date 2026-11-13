@@ -58,6 +58,7 @@ examples/            One app per architecture, the same counter in each, sharing
   web/cli/             A standalone `counter` bin: forwarders over HTTP to the API's invoke route.
 site/                The docs site (VitePress) at caelus.ufosoft.dev. Pages @include the READMEs and
                      docs/architecture.md where they live; page paths copy the repo layout so README links resolve.
+infra/               Terraform for the docs site: S3, CloudFront, ACM, Route 53, the release role. Applied by hand.
 docs/                Architecture and the extracted brainstorm transcripts.
 ```
 
