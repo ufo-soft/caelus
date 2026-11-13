@@ -34,9 +34,17 @@ export default withMermaid(
               { text: 'Keybindings', link: '/guide/keybindings' },
               { text: 'CLI', link: '/guide/cli' },
               { text: 'MCP', link: '/guide/mcp' },
+              { text: 'Forwarding', link: '/guide/forwarding' },
             ],
           },
-          { text: 'Architecture', link: '/architecture' },
+          {
+            text: 'Architecture',
+            items: [
+              { text: 'Overview', link: '/architecture/' },
+              { text: 'Examples', link: '/architecture/examples' },
+              { text: 'Known limits', link: '/architecture/limits' },
+            ],
+          },
         ],
       },
       socialLinks: [{ icon: 'github', link: 'https://github.com/ufo-soft/caelus' }],
