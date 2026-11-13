@@ -74,6 +74,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # TypeDoc reads the adapters' imports of core from the built dist/
+      - run: npm run build
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.SITE_ROLE_ARN }}

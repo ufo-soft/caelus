@@ -1,0 +1,14 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPointStrategy": "packages",
+  "entryPoints": ["../packages/caelus", "../packages/cli", "../packages/mcp"],
+  "packageOptions": { "entryPoints": ["src/*.ts"] },
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+  "name": "API reference",
+  "out": "api",
+  "docsRoot": ".",
+  "readme": "none",
+  "excludePrivate": true,
+  "hideBreadcrumbs": true,
+  "hidePageHeader": true
+}

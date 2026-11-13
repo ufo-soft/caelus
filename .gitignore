@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 .vitepress/cache/
+site/api/
 .terraform/
 .idea/
 

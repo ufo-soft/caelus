@@ -3,12 +3,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vitepress dev",
-    "build": "vitepress build",
+    "api": "typedoc",
+    "dev": "typedoc && vitepress dev",
+    "build": "typedoc && vitepress build",
     "preview": "vitepress preview"
   },
   "devDependencies": {
+    "@ufo-soft/caelus": "*",
+    "@ufo-soft/caelus-cli": "*",
+    "@ufo-soft/caelus-mcp": "*",
+    "mermaid": "^11.12.0",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.14.1",
+    "typedoc-vitepress-theme": "^1.1.4",
     "vitepress": "^1.6.4",
-    "vitepress-plugin-llms": "^1.15.0"
+    "vitepress-plugin-llms": "^1.15.0",
+    "vitepress-plugin-mermaid": "^2.0.17"
   }
 }
